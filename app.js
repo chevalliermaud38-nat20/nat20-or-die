@@ -4734,6 +4734,7 @@ function getAllData() {
         monsterCategories: localStorage.getItem('monsterCategories'),
         encounters: localStorage.getItem('encounters'),
         spells: localStorage.getItem('spells'),
+        combatDescriptions: localStorage.getItem('combatDescriptions'),
         timestamp: new Date().toISOString()
     };
 }
@@ -4930,6 +4931,14 @@ async function importFromGitHub() {
                 spells = spellsData;
                 importCount++;
                 importDetails.push(`${spellCount} sort(s)`);
+            }
+        }
+        if (data.combatDescriptions) {
+            const combatDescriptionsData = JSON.parse(data.combatDescriptions);
+            if (combatDescriptionsData.length > 0) {
+                localStorage.setItem('combatDescriptions', data.combatDescriptions);
+                importCount++;
+                importDetails.push(`${combatDescriptionsData.length} description(s) de combat`);
             }
         }
         
@@ -5285,6 +5294,44 @@ function saveCombatDescription() {
     } else {
         currentCampaign.combatDescriptions.push(combatData);
     }
+    
+    // Also save encounters data
+    const encountersData = encounters[currentCampaign.id] || {};
+    if (!encountersData[currentCampaign.name]) {
+        encountersData[currentCampaign.name] = [];
+    }
+    
+    // Check if this combat already exists in encounters
+    const existingEncounter = encountersData[currentCampaign.name].find(e => 
+        e.timestamp === combatData.timestamp && e.type === 'combat'
+    );
+    
+    if (existingEncounter) {
+        existingEncounter.description = currentCombatDescription;
+        existingEncounter.participants = combatData.participants;
+        existingEncounter.round = combatData.round;
+        existingEncounter.currentTurn = combatData.currentTurn;
+        existingEncounter.status = combatData.status;
+        existingEncounter.updatedAt = new Date().toISOString();
+    } else {
+        // Create new encounter entry
+        encountersData[currentCampaign.name].push({
+            id: 'combat_' + Date.now(),
+            name: `Combat - ${new Date().toLocaleDateString()}`,
+            description: currentCombatDescription,
+            type: 'combat',
+            participants: combatData.participants,
+            round: combatData.round,
+            currentTurn: combatData.currentTurn,
+            status: combatData.status,
+            timestamp: combatData.timestamp,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        });
+    }
+    
+    // Save both combat descriptions and encounters
+    localStorage.setItem('encounters', JSON.stringify(encountersData));
     
     saveCampaignData();
 }
