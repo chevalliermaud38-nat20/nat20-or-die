@@ -1826,54 +1826,46 @@ function loadSpellsData() {
         container.innerHTML = `
             <div class="text-center py-12">
                 <i class="fas fa-magic text-6xl text-gray-300 mb-4"></i>
-                <p class="text-gray-500 text-lg">Aucun sort pour le moment</p>
-                <p class="text-gray-400">Ajoute des sorts à ta bibliothèque !</p>
-                <button onclick="createSpell()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg">
-                    <i class="fas fa-plus mr-2"></i>Ajouter un sort
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Aucun sort</h3>
+                <p class="text-gray-500">Commencez par créer votre premier sort !</p>
+                <button onclick="createSpell()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i> Créer un sort
                 </button>
             </div>
         `;
         return;
     }
     
-    // Display all spells
     let html = '';
     Object.entries(spells).forEach(([level, spellList]) => {
-        spellList.forEach(spell => {
-            html += `
-                <div class="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl" onclick="showSpellPreview('${spell.id}')">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800">${spell.name}</h3>
-                            <div class="flex items-center space-x-2 mt-1">
-                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Niveau ${spell.level}</span>
-                                ${spell.concentration ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Concentration</span>' : ''}
+        html += `
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Sorts de niveau ${level}</h3>
+                <div class="space-y-2">
+                    ${spellList.map(spell => `
+                        <div class="bg-gray-50 rounded-lg p-4 cursor-pointer hover:bg-gray-100" onclick="showSpellPreview('${spell.id}')">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">${spell.name}</h4>
+                                    <p class="text-sm text-gray-600 mt-1">${spell.description ? spell.description.substring(0, 100) + '...' : 'Aucune description'}</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="editSpell('${spell.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteSpell('${spell.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="editSpell(event, '${spell.id}')" class="text-blue-500 hover:text-blue-700 text-sm">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteSpell(event, '${spell.id}')" class="text-red-500 hover:text-red-700 text-sm">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-2 text-sm">
-                        <div class="flex flex-wrap gap-2">
-                            ${spell.classes.map(cls => `
-                                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">${cls}</span>
-                            `).join('')}
+                        `).join('')}
+                            <span class="font-semibold">École:</span> ${spell.school || 'Non spécifiée'}
                         </div>
                         <div class="text-gray-600">
-                            <span class="font-semibold">École:</span> ${spell.school}
+                            <span class="font-semibold">Portée:</span> ${spell.range || 'Non spécifiée'}
                         </div>
                         <div class="text-gray-600">
-                            <span class="font-semibold">Portée:</span> ${spell.range}
-                        </div>
-                        <div class="text-gray-600">
-                            <span class="font-semibold">Durée:</span> ${spell.duration}
+                            <span class="font-semibold">Durée:</span> ${spell.duration || 'Non spécifiée'}
                         </div>
                         ${spell.description ? `
                             <div class="text-gray-600 mt-2">
