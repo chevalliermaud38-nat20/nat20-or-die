@@ -4739,6 +4739,12 @@ function getAllData() {
 // Sync data to GitHub - REAL API
 async function syncToGitHub() {
     try {
+        // Check if token is configured
+        if (!GITHUB_CONFIG.token) {
+            showSyncStatus('Token GitHub non configuré. Clique sur "Token" pour le configurer.', 'error');
+            return;
+        }
+        
         const data = getAllData();
         
         showSyncStatus('Envoi automatique des données vers GitHub...', 'loading');
@@ -4755,6 +4761,10 @@ async function syncToGitHub() {
         if (getFileResponse.ok) {
             const fileInfo = await getFileResponse.json();
             fileSha = fileInfo.sha;
+        } else if (getFileResponse.status === 401) {
+            throw new Error('Token GitHub invalide. Clique sur "Token" pour le reconfigurer.');
+        } else if (getFileResponse.status === 403) {
+            throw new Error('Token GitHub sans permissions. Assurez-vous qu\'il a les permissions "repo".');
         }
         
         // Prepare content for GitHub API
@@ -4777,8 +4787,14 @@ async function syncToGitHub() {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Erreur lors de la mise à jour sur GitHub');
+            if (response.status === 401) {
+                throw new Error('Token GitHub invalide. Clique sur "Token" pour le reconfigurer.');
+            } else if (response.status === 403) {
+                throw new Error('Token GitHub sans permissions. Assurez-vous qu\'il a les permissions "repo".');
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Erreur lors de la mise à jour sur GitHub');
+            }
         }
         
         // Save sync timestamp
