@@ -1897,7 +1897,9 @@ function loadSpellsData() {
     container.innerHTML = html;
 }
 function editSpell(event, spellId) {
-    event.stopPropagation();
+    if (event && event.stopPropagation) {
+        event.stopPropagation();
+    }
     
     // Find spell
     let spell = null;
