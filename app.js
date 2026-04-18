@@ -4816,7 +4816,9 @@ async function importFromGitHub() {
         showSyncStatus('Importation des données depuis GitHub...', 'loading');
         
         // Debug: Check token
+        console.log('=== IMPORT DEBUG START ===');
         console.log('Token configuré:', GITHUB_CONFIG.token ? 'Oui' : 'Non');
+        console.log('Current campaign:', currentCampaign ? currentCampaign.name : 'Aucune');
         
         // Try GitHub Pages first, then fallback to raw.githubusercontent.com
         let response;
@@ -4841,7 +4843,8 @@ async function importFromGitHub() {
         }
         
         const data = await response.json();
-        console.log('Données reçues de GitHub:', data);
+        console.log('Données brutes reçues de GitHub:', data);
+        console.log('Clés dans les données:', Object.keys(data));
         
         // Backup current data before import
         const backupData = {
@@ -4851,7 +4854,8 @@ async function importFromGitHub() {
             monsters: localStorage.getItem('monsters'),
             monsterCategories: localStorage.getItem('monsterCategories'),
             encounters: localStorage.getItem('encounters'),
-            spells: localStorage.getItem('spells')
+            spells: localStorage.getItem('spells'),
+            combatDescriptions: localStorage.getItem('combatDescriptions')
         };
         
         // Check what data we're importing
@@ -4859,10 +4863,15 @@ async function importFromGitHub() {
         const importDetails = [];
         
         // Debug: Check each data type
+        console.log('=== ANALYSE DES DONNÉES À IMPORTER ===');
         console.log('Data.campaigns:', data.campaigns);
         console.log('Data.worlds:', data.worlds);
         console.log('Data.characters:', data.characters);
         console.log('Data.monsters:', data.monsters);
+        console.log('Data.monsterCategories:', data.monsterCategories);
+        console.log('Data.encounters:', data.encounters);
+        console.log('Data.spells:', data.spells);
+        console.log('Data.combatDescriptions:', data.combatDescriptions);
         
         // Import all data to localStorage
         if (data.campaigns) {
@@ -4873,6 +4882,7 @@ async function importFromGitHub() {
                 campaigns = campaignsData;
                 importCount++;
                 importDetails.push(`${campaignsData.length} campagne(s)`);
+                console.log('✅ Campagnes importées:', campaignsData.length);
             }
         }
         if (data.worlds) {
@@ -4882,6 +4892,7 @@ async function importFromGitHub() {
                 worlds = worldsData;
                 importCount++;
                 importDetails.push(`${worldsData.length} monde(s)`);
+                console.log('✅ Mondes importés:', worldsData.length);
             }
         }
         if (data.characters) {
@@ -4892,6 +4903,7 @@ async function importFromGitHub() {
                 characters = charactersData;
                 importCount++;
                 importDetails.push(`${characterCount} personnage(s)`);
+                console.log('✅ Personnages importés:', characterCount);
             }
         }
         if (data.monsters) {
@@ -4902,6 +4914,7 @@ async function importFromGitHub() {
                 monsters = monstersData;
                 importCount++;
                 importDetails.push(`${monsterCount} monstre(s)`);
+                console.log('✅ Monstres importés:', monsterCount);
             }
         }
         if (data.monsterCategories) {
@@ -4911,6 +4924,7 @@ async function importFromGitHub() {
                 monsterCategories = categoriesData;
                 importCount++;
                 importDetails.push(`${Object.keys(categoriesData).length} catégorie(s)`);
+                console.log('✅ Catégories de monstres importées:', Object.keys(categoriesData).length);
             }
         }
         if (data.encounters) {
@@ -4921,6 +4935,7 @@ async function importFromGitHub() {
                 encounters = encountersData;
                 importCount++;
                 importDetails.push(`${encounterCount} rencontre(s)`);
+                console.log('✅ Rencontres importées:', encounterCount);
             }
         }
         if (data.spells) {
@@ -4931,6 +4946,7 @@ async function importFromGitHub() {
                 spells = spellsData;
                 importCount++;
                 importDetails.push(`${spellCount} sort(s)`);
+                console.log('✅ Sorts importés:', spellCount);
             }
         }
         if (data.combatDescriptions) {
@@ -4939,9 +4955,11 @@ async function importFromGitHub() {
                 localStorage.setItem('combatDescriptions', data.combatDescriptions);
                 importCount++;
                 importDetails.push(`${combatDescriptionsData.length} description(s) de combat`);
+                console.log('✅ Descriptions de combat importées:', combatDescriptionsData.length);
             }
         }
         
+        console.log('=== RÉSUMÉ DE L\'IMPORT ===');
         console.log('Import count:', importCount);
         console.log('Import details:', importDetails);
         
@@ -4959,6 +4977,8 @@ async function importFromGitHub() {
         } else {
             showSyncStatus('Aucune donnée trouvée sur GitHub', 'info');
         }
+        
+        console.log('=== IMPORT DEBUG END ===');
         
     } catch (error) {
         console.error('Import error:', error);
