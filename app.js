@@ -4876,10 +4876,84 @@ function checkSyncStatus() {
     }
 }
 
-// Make functions globally accessible
-window.syncToGitHub = syncToGitHub;
-window.importFromGitHub = importFromGitHub;
-window.checkSyncStatus = checkSyncStatus;
+// Create test data for GitHub
+function createTestDataOnGitHub() {
+    const testData = {
+        campaigns: JSON.stringify([{
+            id: 'test_' + Date.now(),
+            name: 'Campagne de test',
+            description: 'Description de la campagne de test',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }]),
+        worlds: JSON.stringify([{
+            id: 'world_' + Date.now(),
+            name: 'Monde de test',
+            description: 'Description du monde de test',
+            createdAt: new Date().toISOString()
+        }]),
+        characters: JSON.stringify({
+            'test_category': [{
+                id: 'char_' + Date.now(),
+                name: 'Personnage de test',
+                description: 'Description du personnage de test',
+                createdAt: new Date().toISOString()
+            }]
+        }),
+        monsters: JSON.stringify({
+            'test_category': [{
+                id: 'monster_' + Date.now(),
+                name: 'Monstre de test',
+                description: 'Description du monstre de test',
+                hp: '50',
+                armorClass: '15',
+                createdAt: new Date().toISOString()
+            }]
+        }),
+        monsterCategories: JSON.stringify({
+            'test_category': {
+                id: 'test_category',
+                name: 'Catégorie de test',
+                description: 'Description de la catégorie de test',
+                createdAt: new Date().toISOString()
+            }
+        }),
+        encounters: JSON.stringify({
+            'test_category': [{
+                id: 'encounter_' + Date.now(),
+                name: 'Rencontre de test',
+                description: 'Description de la rencontre de test',
+                createdAt: new Date().toISOString()
+            }]
+        }),
+        spells: JSON.stringify({
+            '1': [{
+                id: 'spell_' + Date.now(),
+                name: 'Sort de test',
+                level: 1,
+                description: 'Description du sort de test',
+                createdAt: new Date().toISOString()
+            }]
+        }),
+        timestamp: new Date().toISOString()
+    };
+    
+    // Create a downloadable file
+    const dataStr = JSON.stringify(testData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'nat20-data.json';
+    link.click();
+    
+    showSyncStatus('Fichier de test téléchargé ! Importe-le manuellement sur GitHub', 'success');
+}
+
+// Make function globally accessible
+window.createTestDataOnGitHub = createTestDataOnGitHub;
 
 // Spell management functions
 function updateSpellSlot(combatantId, level, newValue) {
