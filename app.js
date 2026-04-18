@@ -5009,7 +5009,7 @@ window.importFromGitHub = importFromGitHub;
 window.checkSyncStatus = checkSyncStatus;
 window.autoSync = autoSync;
 window.configureGitHubToken = configureGitHubToken;
-window.emergencyRestore = emergencyRestore;
+
 function updateSpellSlot(combatantId, level, newValue) {
     const combatant = currentCombat.combatants.find(c => c.id === combatantId);
     if (combatant && combatant.monster.spellSlots) {
@@ -5165,7 +5165,6 @@ window.syncToGitHub = syncToGitHub;
 window.importFromGitHub = importFromGitHub;
 window.checkSyncStatus = checkSyncStatus;
 window.autoSync = autoSync;
-window.createTestDataOnGitHub = createTestDataOnGitHub;
 window.configureGitHubToken = configureGitHubToken;
 window.emergencyRestore = emergencyRestore;
 
