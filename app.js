@@ -5198,6 +5198,10 @@ function autoSync() {
 
 // Emergency restore function
 window.emergencyRestore = function() {
+    if (!confirm('⚠️ ATTENTION ! Cette action va écraser toutes les données sur GitHub avec des données de test. Êtes-vous sûr ?')) {
+        return;
+    }
+    
     const testData = {
         campaigns: JSON.stringify([{
             id: 'test-campaign-' + Date.now(),
