@@ -4812,20 +4812,33 @@ async function importFromGitHub() {
     try {
         showSyncStatus('Importation des données depuis GitHub...', 'loading');
         
+        // Debug: Check token
+        console.log('Token configuré:', GITHUB_CONFIG.token ? 'Oui' : 'Non');
+        
         // Try GitHub Pages first, then fallback to raw.githubusercontent.com
         let response;
+        let urlUsed;
+        
         try {
-            response = await fetch(`${GITHUB_CONFIG.siteUrl}/nat20-data.json`);
+            urlUsed = `${GITHUB_CONFIG.siteUrl}/nat20-data.json`;
+            console.log('Tentative URL GitHub Pages:', urlUsed);
+            response = await fetch(urlUsed);
+            console.log('GitHub Pages response status:', response.status);
         } catch (e) {
+            console.log('GitHub Pages failed, fallback to raw.githubusercontent.com');
             // Fallback to raw.githubusercontent.com
-            response = await fetch(`${GITHUB_CONFIG.rawUrl}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/nat20-data.json`);
+            urlUsed = `${GITHUB_CONFIG.rawUrl}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/nat20-data.json`;
+            console.log('Tentative URL raw:', urlUsed);
+            response = await fetch(urlUsed);
+            console.log('Raw response status:', response.status);
         }
         
         if (!response.ok) {
-            throw new Error('Fichier de données non trouvé sur GitHub');
+            throw new Error(`Fichier de données non trouvé sur GitHub. URL utilisée: ${urlUsed}, Status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('Données reçues de GitHub:', data);
         
         // Backup current data before import
         const backupData = {
@@ -4842,9 +4855,16 @@ async function importFromGitHub() {
         let importCount = 0;
         const importDetails = [];
         
+        // Debug: Check each data type
+        console.log('Data.campaigns:', data.campaigns);
+        console.log('Data.worlds:', data.worlds);
+        console.log('Data.characters:', data.characters);
+        console.log('Data.monsters:', data.monsters);
+        
         // Import all data to localStorage
         if (data.campaigns) {
             const campaignsData = JSON.parse(data.campaigns);
+            console.log('Campaigns parsed:', campaignsData);
             if (campaignsData.length > 0) {
                 localStorage.setItem('campaigns', data.campaigns);
                 campaigns = campaignsData;
@@ -4910,6 +4930,9 @@ async function importFromGitHub() {
                 importDetails.push(`${spellCount} sort(s)`);
             }
         }
+        
+        console.log('Import count:', importCount);
+        console.log('Import details:', importDetails);
         
         // Reload all data to update UI
         displayCampaigns();
