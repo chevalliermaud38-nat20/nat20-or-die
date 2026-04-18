@@ -4736,34 +4736,54 @@ function getAllData() {
     };
 }
 
-// Sync data to GitHub
+// Sync data to GitHub - REAL API
 async function syncToGitHub() {
     try {
         const data = getAllData();
         
-        // Create a JSON file content
+        showSyncStatus('Envoi automatique des données vers GitHub...', 'loading');
+        
+        // Get current file info first
+        const getFileResponse = await fetch(`${GITHUB_CONFIG.apiUrl}/${GITHUB_CONFIG.repo}/contents/nat20-data.json`, {
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        
+        let fileSha = null;
+        if (getFileResponse.ok) {
+            const fileInfo = await getFileResponse.json();
+            fileSha = fileInfo.sha;
+        }
+        
+        // Prepare content for GitHub API
         const content = JSON.stringify(data, null, 2);
+        const contentBase64 = btoa(unescape(encodeURIComponent(content)));
         
-        // Create a blob
-        const blob = new Blob([content], { type: 'application/json' });
+        // Create or update file
+        const response = await fetch(`${GITHUB_CONFIG.apiUrl}/${GITHUB_CONFIG.repo}/contents/nat20-data.json`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: `Auto sync - ${new Date().toISOString()}`,
+                content: contentBase64,
+                sha: fileSha,
+                branch: GITHUB_CONFIG.branch
+            })
+        });
         
-        // Create file data for upload
-        const fileData = new FormData();
-        fileData.append('file', blob, 'nat20-data.json');
-        fileData.append('message', `Sync data - ${new Date().toISOString()}`);
-        fileData.append('branch', GITHUB_CONFIG.branch);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Erreur lors de la mise à jour sur GitHub');
+        }
         
-        // Show loading state
-        showSyncStatus('Envoi des données vers GitHub...', 'loading');
-        
-        // For GitHub Pages, we'll use a simple approach
-        // In a real implementation, you'd use GitHub API or GitHub Actions
-        // For now, we'll simulate the sync
-        setTimeout(() => {
-            // Save sync timestamp
-            localStorage.setItem('lastSync', new Date().toISOString());
-            showSyncStatus('Données synchronisées avec succès !', 'success');
-        }, 2000);
+        // Save sync timestamp
+        localStorage.setItem('lastSync', new Date().toISOString());
+        showSyncStatus('Données synchronisées automatiquement avec succès !', 'success');
         
     } catch (error) {
         console.error('Sync error:', error);
