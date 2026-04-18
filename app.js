@@ -5037,10 +5037,13 @@ function showSpellPreview(spellId) {
     }
 }
 
-// Make spell functions globally accessible
-window.updateSpellSlot = updateSpellSlot;
-window.useSpellSlot = useSpellSlot;
-window.showSpellPreview = showSpellPreview;
+// Make functions globally accessible
+window.syncToGitHub = syncToGitHub;
+window.importFromGitHub = importFromGitHub;
+window.checkSyncStatus = checkSyncStatus;
+window.autoSync = autoSync;
+window.createTestDataOnGitHub = createTestDataOnGitHub;
+window.configureGitHubToken = configureGitHubToken;
 
 function showElementPreview(type, target) {
     const modal = document.getElementById('elementPreviewModal');
