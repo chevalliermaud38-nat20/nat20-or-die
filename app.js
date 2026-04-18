@@ -4811,45 +4811,104 @@ async function importFromGitHub() {
         
         const data = await response.json();
         
+        // Backup current data before import
+        const backupData = {
+            campaigns: localStorage.getItem('campaigns'),
+            worlds: localStorage.getItem('worlds'),
+            characters: localStorage.getItem('characters'),
+            monsters: localStorage.getItem('monsters'),
+            monsterCategories: localStorage.getItem('monsterCategories'),
+            encounters: localStorage.getItem('encounters'),
+            spells: localStorage.getItem('spells')
+        };
+        
+        // Check what data we're importing
+        let importCount = 0;
+        const importDetails = [];
+        
         // Import all data to localStorage
         if (data.campaigns) {
-            localStorage.setItem('campaigns', data.campaigns);
-            campaigns = JSON.parse(data.campaigns);
+            const campaignsData = JSON.parse(data.campaigns);
+            if (campaignsData.length > 0) {
+                localStorage.setItem('campaigns', data.campaigns);
+                campaigns = campaignsData;
+                importCount++;
+                importDetails.push(`${campaignsData.length} campagne(s)`);
+            }
         }
         if (data.worlds) {
-            localStorage.setItem('worlds', data.worlds);
-            worlds = JSON.parse(data.worlds);
+            const worldsData = JSON.parse(data.worlds);
+            if (worldsData.length > 0) {
+                localStorage.setItem('worlds', data.worlds);
+                worlds = worldsData;
+                importCount++;
+                importDetails.push(`${worldsData.length} monde(s)`);
+            }
         }
         if (data.characters) {
-            localStorage.setItem('characters', data.characters);
-            characters = JSON.parse(data.characters);
+            const charactersData = JSON.parse(data.characters);
+            const characterCount = Object.values(charactersData).reduce((total, cat) => total + cat.length, 0);
+            if (characterCount > 0) {
+                localStorage.setItem('characters', data.characters);
+                characters = charactersData;
+                importCount++;
+                importDetails.push(`${characterCount} personnage(s)`);
+            }
         }
         if (data.monsters) {
-            localStorage.setItem('monsters', data.monsters);
-            monsters = JSON.parse(data.monsters);
+            const monstersData = JSON.parse(data.monsters);
+            const monsterCount = Object.values(monstersData).reduce((total, cat) => total + cat.length, 0);
+            if (monsterCount > 0) {
+                localStorage.setItem('monsters', data.monsters);
+                monsters = monstersData;
+                importCount++;
+                importDetails.push(`${monsterCount} monstre(s)`);
+            }
         }
         if (data.monsterCategories) {
-            localStorage.setItem('monsterCategories', data.monsterCategories);
-            monsterCategories = JSON.parse(data.monsterCategories);
+            const categoriesData = JSON.parse(data.monsterCategories);
+            if (Object.keys(categoriesData).length > 0) {
+                localStorage.setItem('monsterCategories', data.monsterCategories);
+                monsterCategories = categoriesData;
+                importCount++;
+                importDetails.push(`${Object.keys(categoriesData).length} catégorie(s)`);
+            }
         }
         if (data.encounters) {
-            localStorage.setItem('encounters', data.encounters);
-            encounters = JSON.parse(data.encounters);
+            const encountersData = JSON.parse(data.encounters);
+            const encounterCount = Object.values(encountersData).reduce((total, cat) => total + cat.length, 0);
+            if (encounterCount > 0) {
+                localStorage.setItem('encounters', data.encounters);
+                encounters = encountersData;
+                importCount++;
+                importDetails.push(`${encounterCount} rencontre(s)`);
+            }
         }
         if (data.spells) {
-            localStorage.setItem('spells', data.spells);
-            spells = JSON.parse(data.spells);
+            const spellsData = JSON.parse(data.spells);
+            const spellCount = Object.values(spellsData).reduce((total, cat) => total + cat.length, 0);
+            if (spellCount > 0) {
+                localStorage.setItem('spells', data.spells);
+                spells = spellsData;
+                importCount++;
+                importDetails.push(`${spellCount} sort(s)`);
+            }
         }
         
-        // Update last sync
-        localStorage.setItem('lastSync', new Date().toISOString());
+        // Reload all data to update UI
+        displayCampaigns();
+        displayWorlds();
+        loadCharactersData();
+        loadMonstersData();
+        loadMonsterCategoriesData();
+        loadEncountersData();
+        loadSpellsData();
         
-        showSyncStatus('Données importées avec succès !', 'success');
-        
-        // Reload current view
-        setTimeout(() => {
-            location.reload();
-        }, 1500);
+        if (importCount > 0) {
+            showSyncStatus(`Données importées avec succès ! ${importDetails.join(', ')}`, 'success');
+        } else {
+            showSyncStatus('Aucune donnée trouvée sur GitHub', 'info');
+        }
         
     } catch (error) {
         console.error('Import error:', error);
