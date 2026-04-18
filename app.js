@@ -5037,6 +5037,18 @@ function showSpellPreview(spellId) {
     }
 }
 
+// Auto-sync functions
+function autoSync() {
+    const lastSync = localStorage.getItem('lastSync');
+    const now = new Date();
+    
+    // Sync every 5 minutes or if never synced
+    if (!lastSync || (now - new Date(lastSync)) > 5 * 60 * 1000) {
+        console.log('Auto-sync triggered');
+        syncToGitHub();
+    }
+}
+
 // Make functions globally accessible
 window.syncToGitHub = syncToGitHub;
 window.importFromGitHub = importFromGitHub;
