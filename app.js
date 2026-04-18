@@ -5160,6 +5160,135 @@ window.emergencyRestore = function() {
     syncToGitHubWithEmergencyData(testData);
 };
 
+// Combat description management
+let currentCombatDescription = '';
+
+function showCombatDescription() {
+    const modal = document.getElementById('combatDescriptionModal');
+    const content = document.getElementById('combatDescriptionContent');
+    
+    // Generate combat description based on current combat state
+    let description = generateCombatDescription();
+    
+    content.innerHTML = `
+        <div class="space-y-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-semibold text-lg mb-2">État du combat</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Nombre de participants:</span>
+                        <span class="text-sm font-bold">${currentCombat ? currentCombat.combatants.length : 0}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Tour actuel:</span>
+                        <span class="text-sm font-bold">${currentCombat ? currentCombat.currentTurn + 1 : 0}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Round:</span>
+                        <span class="text-sm font-bold">${currentCombat ? currentCombat.round : 0}</span>
+                    </div>
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Statut:</span>
+                        <span class="text-sm font-bold ${currentCombat ? 'text-green-600' : 'text-gray-500'}">${currentCombat ? 'En cours' : 'Non démarré'}</span>
+                    </div>
+                </div>
+            </div>
+            
+            ${currentCombat && currentCombat.combatants.length > 0 ? `
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-lg mb-2">Participants</h4>
+                    <div class="space-y-2">
+                        ${currentCombat.combatants.map(combatant => `
+                            <div class="flex items-center justify-between p-2 bg-white rounded border">
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-medium">${combatant.name}</span>
+                                    ${combatant.type === 'monster' ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Monstre</span>' : '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Personnage</span>'}
+                                </div>
+                                <div class="flex items-center space-x-4 text-sm">
+                                    <span>Init: ${combatant.initiative}</span>
+                                    <span>HP: ${combatant.hp}/${combatant.maxHp}</span>
+                                    <span>CA: ${combatant.armorClass}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="bg-yellow-50 rounded-lg p-4">
+                <h4 class="font-semibold text-lg mb-2">Description personnalisée</h4>
+                <textarea id="combatDescInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="6" placeholder="Décrivez le combat en cours...">${currentCombatDescription}</textarea>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeCombatDescriptionModal() {
+    const modal = document.getElementById('combatDescriptionModal');
+    const input = document.getElementById('combatDescInput');
+    
+    if (input) {
+        currentCombatDescription = input.value;
+        saveCombatDescription();
+    }
+    
+    modal.classList.add('hidden');
+}
+
+function editCombatDescription() {
+    const input = document.getElementById('combatDescInput');
+    if (input) {
+        input.focus();
+        input.select();
+    }
+}
+
+function generateCombatDescription() {
+    if (!currentCombat || currentCombat.combatants.length === 0) {
+        return "Aucun combat en cours.";
+    }
+    
+    const participants = currentCombat.combatants.map(c => c.name).join(', ');
+    const round = currentCombat.round;
+    const turn = currentCombat.currentTurn;
+    
+    return `Combat en cours - Round ${round + 1}, Tour ${turn + 1}\nParticipants: ${participants}`;
+}
+
+function saveCombatDescription() {
+    if (!currentCampaign) return;
+    
+    // Save combat description to campaign data
+    if (!currentCampaign.combatDescriptions) {
+        currentCampaign.combatDescriptions = [];
+    }
+    
+    const combatIndex = currentCampaign.combatDescriptions.findIndex(c => c.timestamp === currentCombat.startTime);
+    
+    const combatData = {
+        timestamp: currentCombat.startTime || Date.now(),
+        description: currentCombatDescription,
+        participants: currentCombat.combatants.map(c => ({
+            name: c.name,
+            type: c.type,
+            initiative: c.initiative
+        })),
+        round: currentCombat.round,
+        currentTurn: currentCombat.currentTurn,
+        status: 'active'
+    };
+    
+    if (combatIndex >= 0) {
+        currentCampaign.combatDescriptions[combatIndex] = combatData;
+    } else {
+        currentCampaign.combatDescriptions.push(combatData);
+    }
+    
+    saveCampaignData();
+}
+
 // Make functions globally accessible
 window.syncToGitHub = syncToGitHub;
 window.importFromGitHub = importFromGitHub;
@@ -5167,6 +5296,9 @@ window.checkSyncStatus = checkSyncStatus;
 window.autoSync = autoSync;
 window.configureGitHubToken = configureGitHubToken;
 window.emergencyRestore = emergencyRestore;
+window.showCombatDescription = showCombatDescription;
+window.closeCombatDescriptionModal = closeCombatDescriptionModal;
+window.editCombatDescription = editCombatDescription;
 
 // Emergency sync with test data
 async function syncToGitHubWithEmergencyData(data) {
