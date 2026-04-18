@@ -65,6 +65,35 @@ window.closeMonsterCategoryModal = function() {
     document.getElementById('monsterCategoryModal').classList.add('hidden');
 }
 
+// Global GitHub sync functions (déclarées au début pour éviter les erreurs)
+window.configureGitHubToken = function(token) {
+    if (token) {
+        localStorage.setItem('github_token', token);
+        GITHUB_CONFIG.token = token;
+        showSyncStatus('Token GitHub configuré avec succès !', 'success');
+    } else {
+        const inputToken = prompt('Entrez votre Personal Access Token GitHub:');
+        if (inputToken) {
+            localStorage.setItem('github_token', inputToken);
+            GITHUB_CONFIG.token = inputToken;
+            showSyncStatus('Token GitHub configuré avec succès !', 'success');
+        }
+    }
+};
+
+window.autoSync = function() {
+    const lastSync = localStorage.getItem('lastSync');
+    const now = new Date();
+    
+    // Sync every 5 minutes or if never synced
+    if (!lastSync || (now - new Date(lastSync)) > 5 * 60 * 1000) {
+        console.log('Auto-sync triggered');
+        if (typeof window.syncToGitHub === 'function') {
+            window.syncToGitHub();
+        }
+    }
+};
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     
