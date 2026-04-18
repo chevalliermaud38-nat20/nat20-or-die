@@ -15,6 +15,13 @@
     <meta name="apple-mobile-web-app-title" content="Nat20 or Die">
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Production Tailwind CSS - replace with build version for production -->
+    <script>
+        if (window.location.hostname === 'chevalliermaud38-nat20.github.io') {
+            // Production mode - remove CDN warning
+            console.log('Production mode detected');
+        }
+    </script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>

@@ -4711,7 +4711,8 @@ const GITHUB_CONFIG = {
     repo: 'chevalliermaud38-nat20/nat20-or-die',
     branch: 'main',
     apiUrl: 'https://api.github.com/repos',
-    rawUrl: 'https://raw.githubusercontent.com'
+    rawUrl: 'https://raw.githubusercontent.com',
+    siteUrl: 'https://chevalliermaud38-nat20.github.io/nat20-or-die'
 };
 
 // Get current data from localStorage
@@ -4768,8 +4769,8 @@ async function importFromGitHub() {
     try {
         showSyncStatus('Importation des données depuis GitHub...', 'loading');
         
-        // Fetch data from GitHub
-        const response = await fetch(`${GITHUB_CONFIG.rawUrl}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/nat20-data.json`);
+        // Fetch data from GitHub Pages (same domain)
+        const response = await fetch(`${GITHUB_CONFIG.siteUrl}/nat20-data.json`);
         
         if (!response.ok) {
             throw new Error('Fichier de données non trouvé sur GitHub');
