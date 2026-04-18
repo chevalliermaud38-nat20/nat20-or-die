@@ -5073,7 +5073,12 @@ function displayEncounters() {
                     </button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    ${categoryEncounters.map(encounter => `
+                    ${categoryEncounters.map(encounter => {
+                        if (!encounter || !encounter.id) {
+                            console.warn('Invalid encounter found:', encounter);
+                            return '';
+                        }
+                        return `
                         <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
                             <div class="flex justify-between items-start mb-2">
                                 <h4 class="font-semibold text-gray-800">${encounter.name}</h4>
@@ -5090,11 +5095,17 @@ function displayEncounters() {
                                 <p class="text-gray-600 text-sm mb-2">${encounter.description ? encounter.description.substring(0, 200) + '...' : 'Aucune description'}</p>
                                 ${encounter.monsters ? `
                                     <div class="flex flex-wrap gap-2">
-                                        ${encounter.monsters.map(monster => `
+                                        ${encounter.monsters.map(monster => {
+                                            if (!monster || !monster.monsterId) {
+                                                console.warn('Invalid monster found:', monster);
+                                                return '';
+                                            }
+                                            const monsterName = monsters.find(m => m.id === monster.monsterId)?.name || 'Unknown';
+                                            return `
                                             <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
-                                                ${monster.quantity}x ${monster.isPlayer ? '👤' : '👹'} ${monsters.find(m => m.id === monster.monsterId)?.name || 'Unknown'}
+                                                ${monster.quantity}x ${monster.isPlayer ? '&#128100;' : '&#128101;'} ${monsterName}
                                             </span>
-                                        `).join('')}
+                                        `}).join('')}
                                     </div>
                                 ` : ''}
                             </div>
