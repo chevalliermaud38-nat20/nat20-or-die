@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nat20 or Die - Gestionnaire de Campagnes D&D</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    
+    <!-- iOS Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nat20 or Die">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .campaign-card {
+            transition: all 0.3s ease;
+        }
+        .campaign-card:hover {
+            transform: translateY(-2px);
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .text-link {
+            transition: all 0.2s ease;
+        }
+        .text-link:hover {
+            transform: scale(1.02);
+        }
+        #floatingPreview {
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .chapter-node {
+            transition: all 0.2s ease;
+        }
+        .chapter-node:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-dice-d20 text-2xl"></i>
+                    <h1 class="text-2xl font-bold">Nat20 or Die</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="currentCampaign" class="text-sm">Aucune campagne sélectionnée</span>
+                    <button onclick="syncToGitHub()" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-cloud-upload-alt mr-1"></i> Sync
+                    </button>
+                    <button onclick="importFromGitHub()" class="bg-purple-500 hover:bg-purple-600 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-cloud-download-alt mr-1"></i> Import
+                    </button>
+                    <button onclick="toggleAdventureMode()" id="adventureModeBtn" class="hidden bg-green-500 hover:bg-green-400 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-book-open mr-1"></i> L'AVENTURE COMMENCE
+                    </button>
+                    <button onclick="toggleCombatMode()" id="combatModeBtn" class="hidden bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-swords mr-1"></i> C'est l'heure du duel
+                    </button>
+                    <button onclick="showCampaignSelector()" class="bg-indigo-500 hover:bg-indigo-400 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-exchange-alt mr-1"></i> Changer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen pt-16">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg overflow-y-auto">
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="showSection('campaigns')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3">
+                            <i class="fas fa-book"></i>
+                            <span>Campagnes</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="showSection('worlds')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3">
+                            <i class="fas fa-globe"></i>
+                            <span>Mondes</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="showSection('monsters')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3">
+                            <i class="fas fa-dragon"></i>
+                            <span>Monstres</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="showSection('spells')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3">
+                            <i class="fas fa-magic"></i>
+                            <span>Sorts</span>
+                        </button>
+                    </li>
+                    <li id="campaignSubmenu" class="hidden">
+                        <ul class="ml-4 space-y-1">
+                            <li>
+                                <button onclick="showCampaignSection('scenario')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3 text-sm">
+                                    <i class="fas fa-scroll"></i>
+                                    <span>Scénario</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button onclick="showCampaignSection('characters')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3 text-sm">
+                                    <i class="fas fa-users"></i>
+                                    <span>Personnages</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button onclick="showCampaignSection('encounters')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3 text-sm">
+                                    <i class="fas fa-crossed-swords"></i>
+                                    <span>Rencontres</span>
+                                </button>
+                            </li>
+                            <li>
+                                <button onclick="showCampaignSection('schema')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3 text-sm">
+                                    <i class="fas fa-project-diagram"></i>
+                                    <span>Schéma</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <button onclick="showSection('import')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg flex items-center space-x-3">
+                            <i class="fas fa-file-import"></i>
+                            <span>Importer</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="container mx-auto px-6 py-8">
+                <!-- Campaigns Section -->
+                <section id="campaigns" class="content-section active">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Mes Campagnes</h2>
+                        <button onclick="createCampaign()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Nouvelle Campagne</span>
+                        </button>
+                    </div>
+                    
+                    <div id="campaignsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Campaign cards will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- Worlds Section -->
+                <section id="worlds" class="content-section">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Mondes</h2>
+                        <button onclick="createWorld()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus mr-2"></i>Ajouter un monde
+                        </button>
+                    </div>
+                    
+                    <div id="worldsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- World cards will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- World Detail Section -->
+                <section id="worldDetail" class="content-section">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="worldDetailTitle" class="text-3xl font-bold text-gray-800"></h2>
+                        <button onclick="showSection('worlds')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>Retour aux Mondes</span>
+                        </button>
+                    </div>
+                    
+                    <div id="worldContent" class="space-y-6">
+                        <!-- World content will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- Campaign Detail Section -->
+                <section id="campaignDetail" class="content-section">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800" id="campaignDetailTitle">Campagne</h2>
+                        <button onclick="showSection('campaigns')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>Retour aux Campagnes</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="flex space-x-4 mb-6 border-b">
+                        <button id="scenarioTab" onclick="showCampaignSection('scenario')" class="px-4 py-2 font-semibold text-gray-600 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300">
+                            <i class="fas fa-scroll mr-2"></i>Scénario
+                        </button>
+                        <button id="charactersTab" onclick="showCampaignSection('characters')" class="px-4 py-2 font-semibold text-gray-600 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300">
+                            <i class="fas fa-users mr-2"></i>Personnages
+                        </button>
+                        <button id="monstersTab" onclick="showCampaignSection('monsters')" class="px-4 py-2 font-semibold text-gray-600 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300">
+                            <i class="fas fa-dragon mr-2"></i>Monstres
+                        </button>
+                        <button id="encountersTab" onclick="showCampaignSection('encounters')" class="px-4 py-2 font-semibold text-gray-600 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300">
+                            <i class="fas fa-swords mr-2"></i>Rencontres
+                        </button>
+                        <button id="schemaTab" onclick="showCampaignSection('schema')" class="px-4 py-2 font-semibold text-gray-600 hover:text-gray-800 border-b-2 border-transparent hover:border-gray-300">
+                            <i class="fas fa-project-diagram mr-2"></i>Schéma
+                        </button>
+                    </div>
+                    
+                    <!-- Scenario Content -->
+                    <div id="scenarioContent" class="space-y-6">
+                        <!-- Scenario content will be inserted here -->
+                    </div>
+                    
+                    <!-- Characters Content -->
+                    <div id="charactersContent" class="hidden space-y-6">
+                        <!-- Characters content will be inserted here -->
+                    </div>
+                    
+                    <!-- Monsters Content -->
+                    <div id="monstersContent" class="hidden space-y-6">
+                        <!-- Monsters content will be inserted here -->
+                    </div>
+                    
+                    <!-- Encounters Content -->
+                    <div id="encountersContent" class="hidden space-y-6">
+                        <!-- Encounters content will be inserted here -->
+                    </div>
+                    
+                    <!-- Schema Content -->
+                    <div id="schemaContent" class="hidden bg-white rounded-lg shadow-lg p-6">
+                        <!-- Schema visualization will be inserted here -->
+                    </div>
+                </section>
+
+                <!-- Import Section -->
+                <section id="import" class="content-section">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Importer des données</h2>
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-600 mb-4">Glissez votre fichier CSV ici ou cliquez pour sélectionner</p>
+                            <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+                            <button onclick="document.getElementById('csvFile').click()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                                Sélectionner un fichier
+                            </button>
+                        </div>
+                        <div id="importPreview" class="mt-6 hidden">
+                            <!-- Import preview will be shown here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Monsters Section -->
+                <section id="monsters" class="content-section hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Monstres</h2>
+                        <p class="text-gray-600">Gérez vos monstres et catégories</p>
+                    </div>
+                    
+                    <!-- Monster Categories Section -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Catégories de monstres</h3>
+                        <div class="bg-white rounded-lg shadow-md p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <button id="openMonsterCategoryBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg" onclick="document.getElementById('monsterCategoryModal').classList.remove('hidden'); document.getElementById('monsterCategoryName').value = '';">
+                                    <i class="fas fa-plus mr-2"></i>Ajouter une catégorie
+                                </button>
+                            </div>
+                        </div>
+                        <div id="monsterCategoriesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Categories will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Monsters Grid Section -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Liste des monstres</h3>
+                            <button onclick="openMonsterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>Ajouter un monstre
+                            </button>
+                        </div>
+                        
+                        <!-- Search and Filter Controls -->
+                        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Recherche</label>
+                                    <input type="text" id="monsterSearch" placeholder="Rechercher un monstre..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" onkeyup="searchMonsters()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                                    <select id="monsterCategoryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="filterMonsters()">
+                                        <option value="">Toutes les catégories</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <select id="monsterTypeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="filterMonsters()">
+                                        <option value="">Tous les types</option>
+                                        <option value="aberration">Aberration</option>
+                                        <option value="beast">Bête</option>
+                                        <option value="celestial">Céleste</option>
+                                        <option value="construct">Construction</option>
+                                        <option value="dragon">Dragon</option>
+                                        <option value="elemental">Élémentaire</option>
+                                        <option value="fey">Fé</option>
+                                        <option value="fiend">Démon</option>
+                                        <option value="giant">Géant</option>
+                                        <option value="humanoid">Humanoïde</option>
+                                        <option value="monstrosity">Monstrosité</option>
+                                        <option value="ooze">Gelée</option>
+                                        <option value="plant">Plante</option>
+                                        <option value="undead">Mort-vivant</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Monsters Grid -->
+                        <div id="monstersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Monster cards will be populated here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Spells Section -->
+                <section id="spells" class="content-section">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Bibliothèque de Sorts</h2>
+                        <button onclick="createSpell()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus mr-2"></i>Ajouter un sort
+                        </button>
+                    </div>
+                    
+                    <!-- Search and Filters -->
+                    <div class="mb-6">
+                        <div class="flex space-x-4 items-center">
+                            <input type="text" id="spellSearch" placeholder="Rechercher un sort..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" onkeyup="searchSpells()">
+                            <select id="spellLevelFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="filterSpells()">
+                                <option value="">Tous les niveaux</option>
+                                <option value="1">Niveau 1</option>
+                                <option value="2">Niveau 2</option>
+                                <option value="3">Niveau 3</option>
+                                <option value="4">Niveau 4</option>
+                                <option value="5">Niveau 5</option>
+                                <option value="6">Niveau 6</option>
+                                <option value="7">Niveau 7</option>
+                                <option value="8">Niveau 8</option>
+                                <option value="9">Niveau 9</option>
+                            </select>
+                            <select id="spellClassFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" onchange="filterSpells()">
+                                <option value="">Toutes les classes</option>
+                                <option value="Magicien">Magicien</option>
+                                <option value="Clerc">Clerc</option>
+                                <option value="Druide">Druide</option>
+                                <option value="Paladin">Paladin</option>
+                                <option value="Rôdeur">Rôdeur</option>
+                                <option value="Barde">Barde</option>
+                                <option value="Sorcier">Sorcier</option>
+                                <option value="Ocultiste">Ocultiste</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="spellsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Spell cards will be inserted here -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Campaign Modal -->
+    <div id="campaignModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">Créer une nouvelle campagne</h3>
+            <form onsubmit="saveCampaign(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nom de la campagne</label>
+                    <input type="text" id="campaignName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="campaignDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Monde associé</label>
+                    <select id="campaignWorld" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Aucun monde</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeCampaignModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- World Modal -->
+    <div id="worldModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">Créer un nouveau monde</h3>
+            <form onsubmit="saveWorld(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nom du monde</label>
+                    <input type="text" id="worldName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="worldDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeWorldModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Text Editor Modal -->
+    <div id="textEditorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Éditeur de texte</h3>
+                <button onclick="closeTextEditor()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Link Toolbar Button -->
+            <div class="border-b pb-3 mb-4 flex flex-wrap gap-2">
+                <button onclick="console.log('Inline insertLink called'); const linkModal = document.getElementById('linkModal'); if (linkModal) { document.getElementById('linkTypeSelect').value = ''; document.getElementById('linkCategorySelect').innerHTML = '<option value=&quot;&quot;>Choisir une catégorie</option>'; document.getElementById('linkTargetSelect').innerHTML = '<option value=&quot;&quot;>Choisir un élément</option>'; document.getElementById('linkUrlInput').value = ''; document.getElementById('linkUrlGroup').style.display = 'none'; document.getElementById('linkCategoryGroup').style.display = 'block'; document.getElementById('linkTargetGroup').style.display = 'block'; linkModal.classList.remove('hidden'); console.log('Link modal opened from inline'); } else { console.error('linkModal not found'); }" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm">
+                    <i class="fas fa-link mr-1"></i> Ajouter un lien
+                </button>
+                <button onclick="formatText('bold')" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-bold"></i>
+                </button>
+                <button onclick="formatText('italic')" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-italic"></i>
+                </button>
+                <button onclick="formatText('underline')" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-underline"></i>
+                </button>
+            </div>
+            
+            <!-- Text Area -->
+            <div id="editorContent" contenteditable="true" class="w-full h-64 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[300px] prose max-w-none">
+            </div>
+            
+            <div class="flex justify-end space-x-2 mt-6">
+                <button onclick="closeTextEditor()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                <button onclick="saveTextEditor()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Link Modal -->
+    <div id="linkModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Ajouter un lien</h3>
+                <button onclick="closeLinkModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type de lien</label>
+                    <select id="linkTypeSelect" onchange="console.log('Type changed'); const linkType = this.value; const categorySelect = document.getElementById('linkCategorySelect'); const targetSelect = document.getElementById('linkTargetSelect'); const urlGroup = document.getElementById('linkUrlGroup'); const categoryGroup = document.getElementById('linkCategoryGroup'); const targetGroup = document.getElementById('linkTargetGroup'); categorySelect.innerHTML = '<option value=&quot;&quot;>Choisir une catégorie</option>'; targetSelect.innerHTML = '<option value=&quot;&quot;>Choisir un élément</option>'; if (linkType === 'other') { urlGroup.style.display = 'block'; categoryGroup.style.display = 'none'; targetGroup.style.display = 'none'; } else { urlGroup.style.display = 'none'; categoryGroup.style.display = 'block'; targetGroup.style.display = 'block'; if (linkType === 'world' && currentWorld && currentWorld.categories) { Object.keys(currentWorld.categories).forEach(category => { const option = document.createElement('option'); option.value = category; option.textContent = category; categorySelect.appendChild(option); }); } else if (linkType === 'scenario' && currentCampaign && currentCampaign.scenario) { currentCampaign.scenario.acts.forEach((act, index) => { const option = document.createElement('option'); option.value = index; option.textContent = 'Acte ' + (index + 1) + ': ' + act.title; categorySelect.appendChild(option); }); } else if (linkType === 'character' && currentCampaign && characters[currentCampaign.id]) { Object.keys(characters[currentCampaign.id]).forEach(category => { const option = document.createElement('option'); option.value = category; option.textContent = category; categorySelect.appendChild(option); }); } else if (linkType === 'monster') { Object.keys(monsters).forEach(category => { const option = document.createElement('option'); option.value = category; option.textContent = category; categorySelect.appendChild(option); }); } else if (linkType === 'spell') { for (let i = 1; i <= 9; i++) { const option = document.createElement('option'); option.value = i; option.textContent = 'Niveau ' + i; categorySelect.appendChild(option); } } }" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Choisir un type</option>
+                        <option value="world">Élément du monde</option>
+                        <option value="scenario">Élément du scénario</option>
+                        <option value="character">Personnage</option>
+                        <option value="monster">Monstre</option>
+                        <option value="spell">Sort</option>
+                        <option value="other">Autre (lien web)</option>
+                    </select>
+                </div>
+                
+                <div id="linkCategoryGroup">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                    <select id="linkCategorySelect" onchange="console.log('Category changed'); const selectedType = document.getElementById('linkTypeSelect').value; const category = this.value; const targetSelect = document.getElementById('linkTargetSelect'); targetSelect.innerHTML = '<option value=&quot;&quot;>Choisir un élément</option>'; if (selectedType === 'world' && category && currentWorld) { const subcategories = currentWorld.categories[category]; Object.entries(subcategories).forEach(([subcategory, items]) => { items.forEach(item => { const option = document.createElement('option'); option.value = 'world:' + category + ':' + subcategory + ':' + item.name; option.textContent = subcategory + ' > ' + item.name; targetSelect.appendChild(option); }); }); } else if (selectedType === 'scenario' && category !== '' && currentCampaign) { const actIndex = parseInt(category); const act = currentCampaign.scenario.acts[actIndex]; act.chapters.forEach((chapter, chapterIndex) => { if (chapter.elements) { chapter.elements.forEach((element, elementIndex) => { const option = document.createElement('option'); option.value = 'scenario:' + actIndex + ':' + chapterIndex + ':' + elementIndex; option.textContent = chapter.title + ' > ' + element.name; targetSelect.appendChild(option); }); } }); } else if (selectedType === 'character' && category && currentCampaign && characters[currentCampaign.id]) { characters[currentCampaign.id][category].forEach(character => { const option = document.createElement('option'); option.value = 'character:' + category + ':' + character.id; option.textContent = character.name; targetSelect.appendChild(option); }); } else if (selectedType === 'monster' && category && monsters[category]) { monsters[category].forEach(monster => { const option = document.createElement('option'); option.value = 'monster:' + category + ':' + monster.id; option.textContent = monster.name; targetSelect.appendChild(option); }); } else if (selectedType === 'spell' && category && spells[category]) { spells[category].forEach(spell => { const option = document.createElement('option'); option.value = 'spell:' + category + ':' + spell.id; option.textContent = spell.name; targetSelect.appendChild(option); }); }" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Choisir une catégorie</option>
+                    </select>
+                </div>
+                
+                <div id="linkTargetGroup">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Élément</label>
+                    <select id="linkTargetSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Choisir un élément</option>
+                    </select>
+                </div>
+                
+                <div id="linkUrlGroup" style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">URL</label>
+                    <input type="url" id="linkUrlInput" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://exemple.com">
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button onclick="document.getElementById('linkModal').classList.add('hidden');" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg">
+                        Annuler
+                    </button>
+                    <button onclick="console.log('Confirm link clicked'); const selectedLinkType = document.getElementById('linkTypeSelect').value; const target = document.getElementById('linkTargetSelect').value; const url = document.getElementById('linkUrlInput').value; if (!selectedLinkType) { alert('Veuillez choisir un type de lien'); return; } if (selectedLinkType === 'other' && !url) { alert('Veuillez entrer une URL'); return; } if (selectedLinkType !== 'other' && !target) { alert('Veuillez choisir un élément à lier'); return; } const editorContent = document.getElementById('editorContent'); const selection = window.getSelection(); const selectedText = selection.toString() || 'Lien'; const link = document.createElement('span'); link.className = 'text-link cursor-pointer text-indigo-600 hover:text-indigo-800 border-b-2 border-dotted border-indigo-400 hover:border-indigo-600 transition-all inline-block'; link.setAttribute('contenteditable', 'false'); link.setAttribute('role', 'button'); link.setAttribute('tabindex', '0'); if (selectedLinkType === 'other') { link.setAttribute('data-link-type', 'other'); link.setAttribute('data-link-target', url); link.setAttribute('title', 'Ouvrir dans un nouvel onglet'); } else { link.setAttribute('data-link-type', selectedLinkType); link.setAttribute('data-link-target', target); link.setAttribute('title', 'Voir l\'élément'); } link.textContent = selectedText; if (selection.rangeCount > 0) { const range = selection.getRangeAt(0); range.deleteContents(); range.insertNode(link); } else { editorContent.appendChild(link); } document.getElementById('linkModal').classList.add('hidden'); console.log('Link created successfully'); editorContent.focus();" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                        Ajouter le lien
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Element Preview Modal -->
+    <div id="elementPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="previewTitle" class="text-xl font-bold"></h3>
+                <button onclick="closeElementPreview()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="previewContent" class="prose max-w-none">
+            </div>
+        </div>
+    </div>
+
+    <!-- Monster Modal -->
+    <div id="monsterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Créer un monstre</h3>
+                <button onclick="closeMonsterModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="saveMonster(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nom du monstre</label>
+                        <input type="text" id="monsterName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
+                        <input type="text" id="monsterImage" placeholder="URL de l'image (optionnel)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                        <select id="monsterCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Choisir une catégorie</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Taille</label>
+                        <input type="text" id="monsterSize" placeholder="Ex: Medium, Large, Huge..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Caractéristiques</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">FOR</label>
+                                <input type="number" id="monsterStrength" min="1" max="30" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">DEX</label>
+                                <input type="number" id="monsterDexterity" min="1" max="30" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">CON</label>
+                                <input type="number" id="monsterConstitution" min="1" max="30" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">INT</label>
+                                <input type="number" id="monsterIntelligence" min="1" max="30" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">SAG</label>
+                                <input type="number" id="monsterWisdom" min="1" max="30" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">CHA</label>
+                                <input type="number" id="monsterCharisma" min="1" max="30" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                        <select id="monsterType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Choisir un type</option>
+                            <option value="beast">Bête</option>
+                            <option value="celestial">Céleste</option>
+                            <option value="construct">Construction</option>
+                            <option value="dragon">Dragon</option>
+                            <option value="elemental">Élémentaire</option>
+                            <option value="fey">Féerique</option>
+                            <option value="fiend">Démon</option>
+                            <option value="giant">Géant</option>
+                            <option value="humanoid">Humanoïde</option>
+                            <option value="monstrosity">Monstruosité</option>
+                            <option value="ooze">Vase</option>
+                            <option value="plant">Plante</option>
+                            <option value="undead">Mort-vivant</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Alignement</label>
+                        <input type="text" id="monsterAlignment" placeholder="Ex: Chaotic Evil, Lawful Good..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Classe d'armure</label>
+                        <input type="text" id="monsterArmorClass" placeholder="Ex: 15 (plate armor)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Points de vie</label>
+                        <input type="text" id="monsterHp" placeholder="Ex: 45 (6d10 + 12)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Vitesse</label>
+                        <input type="text" id="monsterSpeed" placeholder="Ex: 30 ft., fly 60 ft." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Résistances</label>
+                        <textarea id="monsterResistances" rows="2" placeholder="Ex: Fire, Lightning; Non-magical weapons" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sorts préparés</label>
+                        <div class="mb-2">
+                            <input type="text" id="preparedSpellsSearch" placeholder="Rechercher un sort..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div id="monsterPreparedSpellsContainer" class="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                            <!-- Spells will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Immunités</label>
+                        <textarea id="monsterImmunities" rows="2" placeholder="Ex: Fire, Poison; Charmed, Frightened" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Emplacements de sorts</label>
+                        <div class="grid grid-cols-5 gap-2">
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 1</label>
+                                <input type="number" id="monsterSlot1" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 2</label>
+                                <input type="number" id="monsterSlot2" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 3</label>
+                                <input type="number" id="monsterSlot3" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 4</label>
+                                <input type="number" id="monsterSlot4" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 5</label>
+                                <input type="number" id="monsterSlot5" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 6</label>
+                                <input type="number" id="monsterSlot6" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 7</label>
+                                <input type="number" id="monsterSlot7" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 8</label>
+                                <input type="number" id="monsterSlot8" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div class="text-center">
+                                <label class="text-xs text-gray-600">Niv 9</label>
+                                <input type="number" id="monsterSlot9" min="0" max="9" placeholder="0" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Compétences</label>
+                        <textarea id="monsterSkills" rows="2" placeholder="Ex: Perception +5, Stealth +4, Athletics +3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sens</label>
+                        <textarea id="monsterSenses" rows="2" placeholder="Ex: Darkvision 60 ft., Passive Perception 15" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Langues</label>
+                        <textarea id="monsterLanguages" rows="2" placeholder="Ex: Common, Draconic, Abyssal" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Traits spéciaux</label>
+                        <textarea id="monsterSpecialTraits" rows="2" placeholder="Ex: Legendary Resistance (3/day), Magic Resistance" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Attaques</label>
+                        <textarea id="monsterAttacks" rows="2" placeholder="Ex: Bite: +7 to hit, 1d8+4 piercing damage" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Actions légendaires</label>
+                        <textarea id="monsterLegendaryActions" rows="2" placeholder="Ex: Detect: The dragon makes a Wisdom (Perception) check." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="monsterDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="closeMonsterModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button type="submit" id="monsterSaveBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Character Modal -->
+    <div id="characterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Créer un personnage</h3>
+                <button onclick="closeCharacterModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="saveCharacter(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nom du personnage</label>
+                        <input type="text" id="characterName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                        <select id="characterCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Choisir une catégorie</option>
+                        </select>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="characterDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                        <input type="url" id="characterImage" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://exemple.com/image.jpg">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Force</label>
+                        <input type="number" id="characterStrength" min="1" max="20" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Dextérité</label>
+                        <input type="number" id="characterDexterity" min="1" max="20" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Constitution</label>
+                        <input type="number" id="characterConstitution" min="1" max="20" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Intelligence</label>
+                        <input type="number" id="characterIntelligence" min="1" max="20" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sagesse</label>
+                        <input type="number" id="characterWisdom" min="1" max="20" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Charisme</label>
+                        <input type="number" id="characterCharisma" min="1" max="20" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fiche personnage</label>
+                        <div class="relative">
+                            <textarea id="characterSheet" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Détails de la fiche de personnage complète..."></textarea>
+                            <button type="button" onclick="openMonsterLinker()" class="absolute top-2 right-2 bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm">
+                                <i class="fas fa-dragon mr-1"></i>Lier un monstre
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button type="submit" id="characterSaveBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Encounter Modal -->
+    <div id="encounterModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Créer une rencontre</h3>
+                <button onclick="closeEncounterModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="saveEncounter(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nom de la rencontre</label>
+                        <input type="text" id="encounterName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                        <select id="encounterCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Choisir une catégorie</option>
+                        </select>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="encounterDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    
+                    <!-- Monster Selection -->
+                    <div class="md:col-span-2 border-t pt-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-lg font-semibold">Monstres dans la rencontre</h4>
+                            <button type="button" onclick="addMonsterToEncounter()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>Ajouter un monstre
+                            </button>
+                        </div>
+                        <div id="encounterMonsters" class="space-y-3">
+                            <!-- Monster entries will be added here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="closeEncounterModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button type="submit" id="encounterSaveBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Combat Interface -->
+    <div id="combatInterface" class="fixed inset-0 bg-black bg-opacity-90 hidden z-50">
+        <div class="flex h-full">
+            <!-- Left Panel - Initiative Order -->
+            <div class="w-1/3 bg-gray-900 text-white p-6 overflow-y-auto">
+                <h3 class="text-xl font-bold mb-4">Ordre d'initiative</h3>
+                <div id="initiativeOrder" class="space-y-2">
+                    <!-- Initiative order will be displayed here -->
+                </div>
+            </div>
+            
+            <!-- Right Panel - Monster Details -->
+            <div class="w-2/3 bg-white p-6 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Combat en cours</h3>
+                    <button onclick="toggleCombatMode()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-times mr-2"></i>Quitter le combat
+                    </button>
+                </div>
+                <div id="combatMonsterDetails">
+                    <!-- Selected monster details will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monster Linker Modal -->
+    <div id="monsterLinkerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Lier un monstre à la fiche personnage</h3>
+                <button onclick="closeMonsterLinker()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <input type="text" id="monsterLinkerSearch" placeholder="Rechercher un monstre..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" onkeyup="searchMonstersForLinker()">
+            </div>
+            
+            <div id="monsterLinkerResults" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- Monster search results will be inserted here -->
+            </div>
+            
+            <div class="flex justify-end space-x-2 mt-6">
+                <button type="button" onclick="closeMonsterLinker()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Preview Modal -->
+    <div id="linkPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="linkPreviewTitle" class="text-xl font-bold text-gray-800"></h3>
+                <button onclick="closeLinkPreview()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="linkPreviewContent" class="prose max-w-none">
+                <!-- Link content will be inserted here -->
+            </div>
+            <div class="mt-6 flex justify-end space-x-2">
+                <button onclick="closeLinkPreview()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg">
+                    Fermer
+                </button>
+                <button id="viewFullElementBtn" onclick="viewFullElement()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-eye mr-2"></i>Voir l'élément complet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spell Modal -->
+    <div id="spellModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Créer un sort</h3>
+                <button onclick="closeSpellModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="saveSpell(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nom du sort</label>
+                        <input type="text" id="spellName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Niveau du sort</label>
+                        <select id="spellLevel" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="1">Niveau 1</option>
+                            <option value="2">Niveau 2</option>
+                            <option value="3">Niveau 3</option>
+                            <option value="4">Niveau 4</option>
+                            <option value="5">Niveau 5</option>
+                            <option value="6">Niveau 6</option>
+                            <option value="7">Niveau 7</option>
+                            <option value="8">Niveau 8</option>
+                            <option value="9">Niveau 9</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Classes qui peuvent le lancer</label>
+                        <select id="spellClasses" multiple class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Magicien">Magicien</option>
+                            <option value="Clerc">Clerc</option>
+                            <option value="Druide">Druide</option>
+                            <option value="Paladin">Paladin</option>
+                            <option value="Rôdeur">Rôdeur</option>
+                            <option value="Barde">Barde</option>
+                            <option value="Sorcier">Sorcier</option>
+                            <option value="Ocultiste">Ocultiste</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Durée</label>
+                        <input type="text" id="spellDuration" placeholder="Ex: 1 action, 1 minute, rituel..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Portée/Zone</label>
+                        <input type="text" id="spellRange" placeholder="Ex: 30 ft, 15-ft cone..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Composantes</label>
+                        <div class="space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="spellVerbal" class="mr-2">
+                                <span>Verbale</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="spellSomatic" class="mr-2">
+                                <span>Somatique</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="spellMaterial" class="mr-2">
+                                <span>Matériel</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cibles</label>
+                        <input type="text" id="spellTargets" placeholder="Ex: 1 créature, zone de 10 ft..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">École de magie</label>
+                        <select id="spellSchool" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Abjuration">Abjuration</option>
+                            <option value="Conjuration">Conjuration</option>
+                            <option value="Divination">Divination</option>
+                            <option value="Enchantement">Enchantement</option>
+                            <option value="Évocation">Évocation</option>
+                            <option value="Illusion">Illusion</option>
+                            <option value="Nécromancie">Nécromancie</option>
+                            <option value="Transmutation">Transmutation</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Attaque/Sauvegarde</label>
+                        <input type="text" id="spellAttack" placeholder="Ex: Attaque de sort, Sauvegarde de DEX..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Dommage/Effet</label>
+                        <input type="text" id="spellDamage" placeholder="Ex: nécrotique, tranchant, feu..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Concentration</label>
+                        <select id="spellConcentration" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="non">Non</option>
+                            <option value="oui">Oui</option>
+                        </select>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="spellDescription" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="closeSpellModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button type="submit" id="spellSaveBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Monster Category Modal -->
+    <div id="monsterCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Créer une catégorie de monstres</h3>
+                <button onclick="document.getElementById('monsterCategoryModal').classList.add('hidden');" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="monsterCategoryForm">
+                <div class="mb-4">
+                    <label for="monsterCategoryName" class="block text-sm font-medium text-gray-700 mb-2">Nom de la catégorie</label>
+                    <input type="text" id="monsterCategoryName" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Dragons, Gobelins, Undeads...">
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="document.getElementById('monsterCategoryModal').classList.add('hidden');" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">Créer</button>
+                </div>
+            </form>
+            
+            <script>
+                document.getElementById('monsterCategoryForm').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('monsterCategoryName').value;
+                    if (name) {
+                        const category = { id: Date.now().toString(), name: name };
+                        const saved = localStorage.getItem('monsterCategories');
+                        let categories = saved ? JSON.parse(saved) : {};
+                        categories[category.id] = category;
+                        localStorage.setItem('monsterCategories', JSON.stringify(categories));
+                        
+                        const categoriesList = document.getElementById('monsterCategoriesList');
+                        if (categoriesList) {
+                            const div = document.createElement('div');
+                            div.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200';
+                            div.innerHTML = '<div class="flex justify-between items-start mb-2"><h4 class="font-semibold text-gray-800">' + category.name + '</h4><button onclick="deleteCategory(\'' + category.id + '\', \'' + category.name + '\')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></div><p class="text-sm text-gray-600">Aucune description</p>';
+                            categoriesList.appendChild(div);
+                        }
+                        
+                        // Ajouter au dropdown des monstres
+                        const categorySelect = document.getElementById('monsterCategory');
+                        if (categorySelect) {
+                            const option = document.createElement('option');
+                            option.value = category.id;
+                            option.textContent = category.name;
+                            categorySelect.appendChild(option);
+                        }
+                        
+                        // Ajouter au filtre
+                        const filterSelect = document.getElementById('monsterCategoryFilter');
+                        if (filterSelect) {
+                            const option = document.createElement('option');
+                            option.value = category.id;
+                            option.textContent = category.name;
+                            filterSelect.appendChild(option);
+                        }
+                        
+                        document.getElementById('monsterCategoryModal').classList.add('hidden');
+                        document.getElementById('monsterCategoryName').value = '';
+                    }
+                });
+                
+                // Charger les catégories existantes au chargement de la modale
+                function loadExistingCategories() {
+                    const saved = localStorage.getItem('monsterCategories');
+                    const categories = saved ? JSON.parse(saved) : {};
+                    
+                    const categoriesList = document.getElementById('monsterCategoriesList');
+                    const categorySelect = document.getElementById('monsterCategory');
+                    const filterSelect = document.getElementById('monsterCategoryFilter');
+                    
+                    // Vider les listes existantes
+                    if (categoriesList) categoriesList.innerHTML = '';
+                    if (categorySelect) {
+                        categorySelect.innerHTML = '<option value="">Choisir une catégorie</option>';
+                    }
+                    if (filterSelect) {
+                        filterSelect.innerHTML = '<option value="">Toutes les catégories</option>';
+                    }
+                    
+                    // Ajouter chaque catégorie
+                    Object.values(categories).forEach(category => {
+                        // Ajouter à la grille
+                        if (categoriesList) {
+                            const div = document.createElement('div');
+                            div.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200';
+                            div.innerHTML = '<div class="flex justify-between items-start mb-2"><h4 class="font-semibold text-gray-800">' + category.name + '</h4><button onclick="deleteCategory(\'' + category.id + '\', \'' + category.name + '\')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></div><p class="text-sm text-gray-600">Aucune description</p>';
+                            categoriesList.appendChild(div);
+                        }
+                        
+                        // Ajouter au dropdown des monstres
+                        if (categorySelect) {
+                            const option = document.createElement('option');
+                            option.value = category.id;
+                            option.textContent = category.name;
+                            categorySelect.appendChild(option);
+                        }
+                        
+                        // Ajouter au filtre
+                        if (filterSelect) {
+                            const option = document.createElement('option');
+                            option.value = category.id;
+                            option.textContent = category.name;
+                            filterSelect.appendChild(option);
+                        }
+                    });
+                }
+                
+                // Fonction pour supprimer une catégorie
+                window.deleteCategory = function(categoryId, categoryName) {
+                    // Vérifier si des monstres utilisent cette catégorie
+                    const monstersData = localStorage.getItem('monsters');
+                    if (monstersData) {
+                        const monsters = JSON.parse(monstersData);
+                        if (monsters[categoryId] && monsters[categoryId].length > 0) {
+                            alert('Impossible de supprimer cette catégorie : elle contient ' + monsters[categoryId].length + ' monstre(s).');
+                            return;
+                        }
+                    }
+                    
+                    if (confirm('Supprimer la catégorie "' + categoryName + '" ?')) {
+                        const saved = localStorage.getItem('monsterCategories');
+                        let categories = saved ? JSON.parse(saved) : {};
+                        delete categories[categoryId];
+                        localStorage.setItem('monsterCategories', JSON.stringify(categories));
+                        
+                        // Recharger l'affichage
+                        loadExistingCategories();
+                    }
+                };
+                
+                // Charger les catégories quand la modale s'ouvre
+                loadExistingCategories();
+            </script>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
