@@ -4875,10 +4875,16 @@ async function importFromGitHub() {
         
         // Import all data to localStorage
         if (data.campaigns) {
-            const campaignsData = JSON.parse(data.campaigns);
+            let campaignsData;
+            try {
+                campaignsData = typeof data.campaigns === 'string' ? JSON.parse(data.campaigns) : data.campaigns;
+            } catch (e) {
+                console.error('Error parsing campaigns:', e);
+                campaignsData = [];
+            }
             console.log('Campaigns parsed:', campaignsData);
             if (campaignsData.length > 0) {
-                localStorage.setItem('campaigns', data.campaigns);
+                localStorage.setItem('campaigns', JSON.stringify(campaignsData));
                 campaigns = campaignsData;
                 importCount++;
                 importDetails.push(`${campaignsData.length} campagne(s)`);
@@ -4886,9 +4892,15 @@ async function importFromGitHub() {
             }
         }
         if (data.worlds) {
-            const worldsData = JSON.parse(data.worlds);
+            let worldsData;
+            try {
+                worldsData = typeof data.worlds === 'string' ? JSON.parse(data.worlds) : data.worlds;
+            } catch (e) {
+                console.error('Error parsing worlds:', e);
+                worldsData = [];
+            }
             if (worldsData.length > 0) {
-                localStorage.setItem('worlds', data.worlds);
+                localStorage.setItem('worlds', JSON.stringify(worldsData));
                 worlds = worldsData;
                 importCount++;
                 importDetails.push(`${worldsData.length} monde(s)`);
@@ -4896,10 +4908,16 @@ async function importFromGitHub() {
             }
         }
         if (data.characters) {
-            const charactersData = JSON.parse(data.characters);
+            let charactersData;
+            try {
+                charactersData = typeof data.characters === 'string' ? JSON.parse(data.characters) : data.characters;
+            } catch (e) {
+                console.error('Error parsing characters:', e);
+                charactersData = {};
+            }
             const characterCount = Object.values(charactersData).reduce((total, cat) => total + cat.length, 0);
             if (characterCount > 0) {
-                localStorage.setItem('characters', data.characters);
+                localStorage.setItem('characters', JSON.stringify(charactersData));
                 characters = charactersData;
                 importCount++;
                 importDetails.push(`${characterCount} personnage(s)`);
@@ -4907,10 +4925,16 @@ async function importFromGitHub() {
             }
         }
         if (data.monsters) {
-            const monstersData = JSON.parse(data.monsters);
+            let monstersData;
+            try {
+                monstersData = typeof data.monsters === 'string' ? JSON.parse(data.monsters) : data.monsters;
+            } catch (e) {
+                console.error('Error parsing monsters:', e);
+                monstersData = {};
+            }
             const monsterCount = Object.values(monstersData).reduce((total, cat) => total + cat.length, 0);
             if (monsterCount > 0) {
-                localStorage.setItem('monsters', data.monsters);
+                localStorage.setItem('monsters', JSON.stringify(monstersData));
                 monsters = monstersData;
                 importCount++;
                 importDetails.push(`${monsterCount} monstre(s)`);
@@ -4918,9 +4942,15 @@ async function importFromGitHub() {
             }
         }
         if (data.monsterCategories) {
-            const categoriesData = JSON.parse(data.monsterCategories);
+            let categoriesData;
+            try {
+                categoriesData = typeof data.monsterCategories === 'string' ? JSON.parse(data.monsterCategories) : data.monsterCategories;
+            } catch (e) {
+                console.error('Error parsing monsterCategories:', e);
+                categoriesData = {};
+            }
             if (Object.keys(categoriesData).length > 0) {
-                localStorage.setItem('monsterCategories', data.monsterCategories);
+                localStorage.setItem('monsterCategories', JSON.stringify(categoriesData));
                 monsterCategories = categoriesData;
                 importCount++;
                 importDetails.push(`${Object.keys(categoriesData).length} catégorie(s)`);
@@ -4928,10 +4958,16 @@ async function importFromGitHub() {
             }
         }
         if (data.encounters) {
-            const encountersData = JSON.parse(data.encounters);
+            let encountersData;
+            try {
+                encountersData = typeof data.encounters === 'string' ? JSON.parse(data.encounters) : data.encounters;
+            } catch (e) {
+                console.error('Error parsing encounters:', e);
+                encountersData = {};
+            }
             const encounterCount = Object.values(encountersData).reduce((total, cat) => total + cat.length, 0);
             if (encounterCount > 0) {
-                localStorage.setItem('encounters', data.encounters);
+                localStorage.setItem('encounters', JSON.stringify(encountersData));
                 encounters = encountersData;
                 importCount++;
                 importDetails.push(`${encounterCount} rencontre(s)`);
@@ -4939,10 +4975,16 @@ async function importFromGitHub() {
             }
         }
         if (data.spells) {
-            const spellsData = JSON.parse(data.spells);
+            let spellsData;
+            try {
+                spellsData = typeof data.spells === 'string' ? JSON.parse(data.spells) : data.spells;
+            } catch (e) {
+                console.error('Error parsing spells:', e);
+                spellsData = {};
+            }
             const spellCount = Object.values(spellsData).reduce((total, cat) => total + cat.length, 0);
             if (spellCount > 0) {
-                localStorage.setItem('spells', data.spells);
+                localStorage.setItem('spells', JSON.stringify(spellsData));
                 spells = spellsData;
                 importCount++;
                 importDetails.push(`${spellCount} sort(s)`);
@@ -4950,9 +4992,15 @@ async function importFromGitHub() {
             }
         }
         if (data.combatDescriptions) {
-            const combatDescriptionsData = JSON.parse(data.combatDescriptions);
+            let combatDescriptionsData;
+            try {
+                combatDescriptionsData = typeof data.combatDescriptions === 'string' ? JSON.parse(data.combatDescriptions) : data.combatDescriptions;
+            } catch (e) {
+                console.error('Error parsing combatDescriptions:', e);
+                combatDescriptionsData = [];
+            }
             if (combatDescriptionsData.length > 0) {
-                localStorage.setItem('combatDescriptions', data.combatDescriptions);
+                localStorage.setItem('combatDescriptions', JSON.stringify(combatDescriptionsData));
                 importCount++;
                 importDetails.push(`${combatDescriptionsData.length} description(s) de combat`);
                 console.log('✅ Descriptions de combat importées:', combatDescriptionsData.length);
