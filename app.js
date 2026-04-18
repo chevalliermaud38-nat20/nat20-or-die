@@ -4969,7 +4969,7 @@ async function importFromGitHub() {
         loadCharactersData();
         loadMonstersData();
         loadMonsterCategoriesData();
-        loadEncountersData();
+        displayEncounters();
         loadSpellsData();
         
         if (importCount > 0) {
@@ -5037,7 +5037,75 @@ function loadEncountersData() {
     const saved = localStorage.getItem('encounters');
     if (saved) {
         encounters = JSON.parse(saved);
+        console.log('Encounters loaded:', encounters); // Debug
     }
+}
+
+// Display encounters data
+function displayEncounters() {
+    const container = document.getElementById('encountersContent');
+    if (!container) return;
+    
+    const campaignEncounters = encounters[currentCampaign.id] || {};
+    
+    if (Object.keys(campaignEncounters).length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg">Aucune rencontre pour le moment</p>
+                <p class="text-gray-400">Ajoute des rencontres à ta campagne !</p>
+                <button onclick="openEncounterModal()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Ajouter une rencontre
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    Object.entries(campaignEncounters).forEach(([categoryName, categoryEncounters]) => {
+        html += `
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">${categoryName}</h3>
+                    <button onclick="openEncounterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i>Ajouter une rencontre
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${categoryEncounters.map(encounter => `
+                        <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-semibold text-gray-800">${encounter.name}</h4>
+                                <div class="flex space-x-2">
+                                    <button onclick="editEncounter('${encounter.id}')" class="text-blue-500 hover:text-blue-700 text-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteEncounter('${encounter.id}')" class="text-red-500 hover:text-red-700 text-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-gray-600 text-sm mb-2">${encounter.description ? encounter.description.substring(0, 200) + '...' : 'Aucune description'}</p>
+                                ${encounter.monsters ? `
+                                    <div class="flex flex-wrap gap-2">
+                                        ${encounter.monsters.map(monster => `
+                                            <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                                                ${monster.quantity}x ${monster.isPlayer ? '👤' : '👹'} ${monsters.find(m => m.id === monster.monsterId)?.name || 'Unknown'}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
 }
 
 // Make functions globally accessible
