@@ -1858,29 +1858,15 @@ function loadSpellsData() {
                                     </button>
                                 </div>
                             </div>
-                        `).join('')}
-                            <span class="font-semibold">École:</span> ${spell.school || 'Non spécifiée'}
                         </div>
-                        <div class="text-gray-600">
-                            <span class="font-semibold">Portée:</span> ${spell.range || 'Non spécifiée'}
-                        </div>
-                        <div class="text-gray-600">
-                            <span class="font-semibold">Durée:</span> ${spell.duration || 'Non spécifiée'}
-                        </div>
-                        ${spell.description ? `
-                            <div class="text-gray-600 mt-2">
-                                <span class="font-semibold">Description:</span> ${spell.description.substring(0, 150)}${spell.description.length > 150 ? '...' : ''}
-                            </div>
-                        ` : ''}
-                    </div>
+                    `).join('')}
                 </div>
-            `;
-        });
+            </div>
+        `;
     });
     
     container.innerHTML = html;
 }
-
 function editSpell(event, spellId) {
     event.stopPropagation();
     
