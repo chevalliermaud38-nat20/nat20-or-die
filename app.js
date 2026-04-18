@@ -4769,8 +4769,14 @@ async function importFromGitHub() {
     try {
         showSyncStatus('Importation des données depuis GitHub...', 'loading');
         
-        // Fetch data from GitHub Pages (same domain)
-        const response = await fetch(`${GITHUB_CONFIG.siteUrl}/nat20-data.json`);
+        // Try GitHub Pages first, then fallback to raw.githubusercontent.com
+        let response;
+        try {
+            response = await fetch(`${GITHUB_CONFIG.siteUrl}/nat20-data.json`);
+        } catch (e) {
+            // Fallback to raw.githubusercontent.com
+            response = await fetch(`${GITHUB_CONFIG.rawUrl}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/nat20-data.json`);
+        }
         
         if (!response.ok) {
             throw new Error('Fichier de données non trouvé sur GitHub');
