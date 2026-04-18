@@ -5176,6 +5176,14 @@ function showCombatDescription() {
     const modal = document.getElementById('combatDescriptionModal');
     const content = document.getElementById('combatDescriptionContent');
     
+    // Load existing combat description if available
+    if (currentCombat && currentCombat.startTime && currentCampaign && currentCampaign.combatDescriptions) {
+        const existingDescription = currentCampaign.combatDescriptions.find(c => c.timestamp === currentCombat.startTime);
+        if (existingDescription && existingDescription.description) {
+            currentCombatDescription = existingDescription.description;
+        }
+    }
+    
     // Generate combat description based on current combat state
     let description = generateCombatDescription();
     
@@ -5274,10 +5282,16 @@ function saveCombatDescription() {
         currentCampaign.combatDescriptions = [];
     }
     
+    // Check if combat exists and has startTime
+    if (!currentCombat || !currentCombat.startTime) {
+        console.warn('No combat in progress or combat has no startTime');
+        return;
+    }
+    
     const combatIndex = currentCampaign.combatDescriptions.findIndex(c => c.timestamp === currentCombat.startTime);
     
     const combatData = {
-        timestamp: currentCombat.startTime || Date.now(),
+        timestamp: currentCombat.startTime,
         description: currentCombatDescription,
         participants: currentCombat.combatants.map(c => ({
             name: c.name,
