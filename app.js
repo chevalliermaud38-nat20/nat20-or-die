@@ -5196,6 +5196,37 @@ function autoSync() {
     }
 }
 
+// Emergency restore function
+window.emergencyRestore = function() {
+    const testData = {
+        campaigns: JSON.stringify([{
+            id: 'test-campaign-' + Date.now(),
+            name: 'Campagne de test restaurée',
+            description: 'Campagne créée pour tester la restauration',
+            image: '',
+            scenario: {
+                acts: []
+            }
+        }]),
+        worlds: JSON.stringify([{
+            id: 'test-world-' + Date.now(),
+            name: 'Monde de test restauré',
+            description: 'Monde créé pour tester la restauration',
+            image: '',
+            categories: {}
+        }]),
+        characters: JSON.stringify({}),
+        monsters: JSON.stringify({}),
+        monsterCategories: JSON.stringify({}),
+        encounters: JSON.stringify({}),
+        spells: JSON.stringify({}),
+        timestamp: new Date().toISOString()
+    };
+    
+    // Send to GitHub
+    syncToGitHubWithEmergencyData(testData);
+};
+
 // Make functions globally accessible
 window.syncToGitHub = syncToGitHub;
 window.importFromGitHub = importFromGitHub;
@@ -5203,6 +5234,57 @@ window.checkSyncStatus = checkSyncStatus;
 window.autoSync = autoSync;
 window.createTestDataOnGitHub = createTestDataOnGitHub;
 window.configureGitHubToken = configureGitHubToken;
+window.emergencyRestore = emergencyRestore;
+
+// Emergency sync with test data
+async function syncToGitHubWithEmergencyData(data) {
+    try {
+        showSyncStatus('Restauration d\'urgence en cours...', 'loading');
+        
+        // Get current file info first
+        const getFileResponse = await fetch(`${GITHUB_CONFIG.apiUrl}/${GITHUB_CONFIG.repo}/contents/nat20-data.json`, {
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        
+        let fileSha = null;
+        if (getFileResponse.ok) {
+            const fileInfo = await getFileResponse.json();
+            fileSha = fileInfo.sha;
+        }
+        
+        // Prepare content for GitHub API
+        const content = JSON.stringify(data, null, 2);
+        const contentBase64 = btoa(unescape(encodeURIComponent(content)));
+        
+        // Create or update file
+        const response = await fetch(`${GITHUB_CONFIG.apiUrl}/${GITHUB_CONFIG.repo}/contents/nat20-data.json`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: `Emergency restore - ${new Date().toISOString()}`,
+                content: contentBase64,
+                sha: fileSha,
+                branch: GITHUB_CONFIG.branch
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Erreur lors de la restauration');
+        }
+        
+        showSyncStatus('Données restaurées avec succès !', 'success');
+        
+    } catch (error) {
+        console.error('Restore error:', error);
+        showSyncStatus('Erreur de restauration: ' + error.message, 'error');
+    }
+}
 
 function showElementPreview(type, target) {
     const modal = document.getElementById('elementPreviewModal');
