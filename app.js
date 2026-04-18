@@ -5076,41 +5076,43 @@ function displayEncounters() {
                     ${categoryEncounters.map(encounter => {
                         if (!encounter || !encounter.id) {
                             console.warn('Invalid encounter found:', encounter);
-                            return '';
+                            return '<div class="bg-red-100 border border-red-300 text-red-800 p-4 rounded">Invalid encounter data</div>';
                         }
                         return `
-                        <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
-                            <div class="flex justify-between items-start mb-2">
-                                <h4 class="font-semibold text-gray-800">${encounter.name}</h4>
-                                <div class="flex space-x-2">
-                                    <button onclick="editEncounter('${encounter.id}')" class="text-blue-500 hover:text-blue-700 text-sm">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button onclick="deleteEncounter('${encounter.id}')" class="text-red-500 hover:text-red-700 text-sm">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                            <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-semibold text-gray-800">${encounter.name}</h4>
+                                    <div class="flex space-x-2">
+                                        <button onclick="editEncounter('${encounter.id}')" class="text-blue-500 hover:text-blue-700 text-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteEncounter('${encounter.id}')" class="text-red-500 hover:text-red-700 text-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <p class="text-gray-600 text-sm mb-2">${encounter.description ? encounter.description.substring(0, 200) + '...' : 'Aucune description'}</p>
+                                    ${encounter.monsters ? `
+                                        <div class="flex flex-wrap gap-2">
+                                            ${encounter.monsters.map(monster => {
+                                                if (!monster || !monster.monsterId) {
+                                                    console.warn('Invalid monster found:', monster);
+                                                    return '<span class="text-xs text-red-500">Invalid monster</span>';
+                                                }
+                                                const monsterName = monsters.find(m => m.id === monster.monsterId)?.name || 'Unknown';
+                                                return `
+                                                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                                                        ${monster.quantity}x ${monster.isPlayer ? '&#128100;' : '&#128101;'} ${monsterName}
+                                                    </span>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <p class="text-gray-600 text-sm mb-2">${encounter.description ? encounter.description.substring(0, 200) + '...' : 'Aucune description'}</p>
-                                ${encounter.monsters ? `
-                                    <div class="flex flex-wrap gap-2">
-                                        ${encounter.monsters.map(monster => {
-                                            if (!monster || !monster.monsterId) {
-                                                console.warn('Invalid monster found:', monster);
-                                                return '';
-                                            }
-                                            const monsterName = monsters.find(m => m.id === monster.monsterId)?.name || 'Unknown';
-                                            return `
-                                            <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
-                                                ${monster.quantity}x ${monster.isPlayer ? '&#128100;' : '&#128101;'} ${monsterName}
-                                            </span>
-                                        `}).join('')}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
