@@ -5032,6 +5032,14 @@ function checkSyncStatus() {
     }
 }
 
+// Load encounters data
+function loadEncountersData() {
+    const saved = localStorage.getItem('encounters');
+    if (saved) {
+        encounters = JSON.parse(saved);
+    }
+}
+
 // Make functions globally accessible
 window.syncToGitHub = syncToGitHub;
 window.importFromGitHub = importFromGitHub;
