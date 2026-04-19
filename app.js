@@ -5028,6 +5028,19 @@ async function importFromGitHub() {
         displayEncounters();
         loadSpellsData();
         
+        // Auto-select first campaign if available and none selected
+        if (campaigns.length > 0 && (!currentCampaign || !currentCampaign.id)) {
+            currentCampaign = campaigns[0];
+            console.log('Auto-selected campaign:', currentCampaign.name);
+            // Update UI to reflect selection
+            displayEncounters();
+            // Update campaign display if needed
+            const campaignCards = document.querySelectorAll('.campaign-card');
+            campaignCards.forEach(card => card.classList.remove('ring-2', 'ring-indigo-500'));
+            const firstCard = document.querySelector('.campaign-card');
+            if (firstCard) firstCard.classList.add('ring-2', 'ring-indigo-500');
+        }
+        
         if (importCount > 0) {
             showSyncStatus(`Données importées avec succès ! ${importDetails.join(', ')}`, 'success');
         } else {
@@ -5128,7 +5141,7 @@ function displayEncounters() {
                 <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
                 <p class="text-gray-500 text-lg">Aucune rencontre pour le moment</p>
                 <p class="text-gray-400">Ajoute des rencontres à ta campagne !</p>
-                <button onclick="openEncounterModal()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg">
+                <button onclick="createEncounter()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg">
                     <i class="fas fa-plus mr-2"></i>Ajouter une rencontre
                 </button>
             </div>
@@ -5142,7 +5155,7 @@ function displayEncounters() {
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold text-gray-800">${categoryName}</h3>
-                    <button onclick="openEncounterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                    <button onclick="createEncounter()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
                         <i class="fas fa-plus mr-2"></i>Ajouter une rencontre
                     </button>
                 </div>
