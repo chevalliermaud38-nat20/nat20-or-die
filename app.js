@@ -1015,7 +1015,14 @@ function updateMonsterEntry(selectElement) {
     const isPlayerCheckbox = monsterEntry.querySelector('.is-player-checkbox');
     
     if (selectElement.value) {
-        const selectedMonster = monsters.flat().find(m => m.id === selectElement.value);
+        // Flatten monsters object to array for older browsers
+        const allMonsters = [];
+        Object.values(monsters).forEach(categoryMonsters => {
+            if (Array.isArray(categoryMonsters)) {
+                allMonsters.push(...categoryMonsters);
+            }
+        });
+        const selectedMonster = allMonsters.find(m => m.id === selectElement.value);
         if (selectedMonster) {
             quantityInput.value = quantityInput.value || 1;
             isPlayerCheckbox.checked = isPlayerCheckbox.checked || false;
