@@ -5131,6 +5131,17 @@ function loadEncountersData() {
     }
 }
 
+// Helper function to flatten monsters object to array
+function flattenMonsters() {
+    const allMonsters = [];
+    Object.values(monsters).forEach(categoryMonsters => {
+        if (Array.isArray(categoryMonsters)) {
+            allMonsters.push(...categoryMonsters);
+        }
+    });
+    return allMonsters;
+}
+
 // Display encounters data
 function displayEncounters() {
     const container = document.getElementById('encountersContent');
@@ -5223,7 +5234,8 @@ function displayEncounters() {
                                                     console.warn('Invalid monster found:', monster);
                                                     return '<span class="text-xs text-red-500">Invalid monster</span>';
                                                 }
-                                                const monsterName = monsters.find(m => m.id === monster.monsterId)?.name || 'Unknown';
+                                                const allMonsters = flattenMonsters();
+                                                const monsterName = allMonsters.find(m => m.id === monster.monsterId)?.name || 'Unknown';
                                                 return `
                                                     <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
                                                         ${monster.quantity}x ${monster.isPlayer ? '&#128100;' : '&#128101;'} ${monsterName}
