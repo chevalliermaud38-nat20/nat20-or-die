@@ -5102,6 +5102,18 @@ function displayEncounters() {
     const container = document.getElementById('encountersContent');
     if (!container) return;
     
+    // Si aucune campagne n'est sélectionnée, afficher un message
+    if (!currentCampaign || !currentCampaign.id) {
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg">Aucune campagne sélectionnée</p>
+                <p class="text-gray-400">Sélectionne une campagne pour voir les rencontres !</p>
+            </div>
+        `;
+        return;
+    }
+    
     const campaignEncounters = encounters[currentCampaign.id] || {};
     
     if (Object.keys(campaignEncounters).length === 0) {
