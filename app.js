@@ -1009,6 +1009,20 @@ function closeEncounterModal() {
     window.encounterMonsterEntries = [];
 }
 
+function updateMonsterEntry(selectElement) {
+    const monsterEntry = selectElement.parentElement;
+    const quantityInput = monsterEntry.querySelector('.quantity-input');
+    const isPlayerCheckbox = monsterEntry.querySelector('.is-player-checkbox');
+    
+    if (selectElement.value) {
+        const selectedMonster = monsters.flat().find(m => m.id === selectElement.value);
+        if (selectedMonster) {
+            quantityInput.value = quantityInput.value || 1;
+            isPlayerCheckbox.checked = isPlayerCheckbox.checked || false;
+        }
+    }
+}
+
 function addMonsterToEncounter() {
     const monsterEntry = document.createElement('div');
     monsterEntry.className = 'flex items-center space-x-3 p-3 bg-gray-50 rounded-lg';
