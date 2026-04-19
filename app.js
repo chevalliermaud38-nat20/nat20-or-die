@@ -5147,8 +5147,13 @@ function displayEncounters() {
     const container = document.getElementById('encountersContent');
     if (!container) return;
     
+    console.log('=== DISPLAY ENCOUNTERS DEBUG ===');
+    console.log('Current campaign:', currentCampaign);
+    console.log('All encounters:', encounters);
+    
     // Si aucune campagne n'est sélectionnée, afficher un message
     if (!currentCampaign || !currentCampaign.id) {
+        console.log('No campaign selected');
         container.innerHTML = `
             <div class="text-center py-12">
                 <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
@@ -5167,10 +5172,10 @@ function displayEncounters() {
     
     // Get encounters for this campaign
     const campaignEncounters = encounters[currentCampaign.id] || {};
-    
-    console.log('Campaign encounters:', campaignEncounters); // Debug
+    console.log('Campaign encounters:', campaignEncounters);
     
     if (Object.keys(campaignEncounters).length === 0) {
+        console.log('No encounters found for this campaign');
         container.innerHTML = `
             <div class="text-center py-12">
                 <i class="fas fa-users text-6xl text-gray-300 mb-4"></i>
@@ -5184,8 +5189,12 @@ function displayEncounters() {
         return;
     }
     
+    console.log('Displaying encounters...');
     let html = '';
+    
     Object.entries(campaignEncounters).forEach(([categoryName, categoryEncounters]) => {
+        console.log(`Category: ${categoryName}, Encounters: ${categoryEncounters.length}`);
+        
         html += `
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-4">
@@ -5200,6 +5209,9 @@ function displayEncounters() {
                             console.warn('Invalid encounter found:', encounter);
                             return '<div class="bg-red-100 border border-red-300 text-red-800 p-4 rounded">Invalid encounter data</div>';
                         }
+                        
+                        console.log('Displaying encounter:', encounter.name);
+                        
                         return `
                             <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
                                 <div class="flex justify-between items-start mb-2">
@@ -5218,15 +5230,23 @@ function displayEncounters() {
                                 </div>
                                 <div class="mb-3">
                                     <p class="text-gray-600 text-sm mb-2">${encounter.description ? encounter.description.substring(0, 200) + '...' : 'Aucune description'}</p>
-                                    ${encounter.monsters ? `
+                                    ${encounter.monsters && encounter.monsters.length > 0 ? `
                                         <div class="flex flex-wrap gap-2">
                                             ${encounter.monsters.map(monster => {
                                                 if (!monster || !monster.monsterId) {
                                                     console.warn('Invalid monster found:', monster);
                                                     return '<span class="text-xs text-red-500">Invalid monster</span>';
                                                 }
-                                                const allMonsters = flattenMonsters();
-                                                const monsterName = allMonsters.find(m => m.id === monster.monsterId)?.name || 'Unknown';
+                                                
+                                                // Find monster name using the same logic as saveEncounter
+                                                let monsterName = 'Unknown';
+                                                Object.values(monsters).forEach(category => {
+                                                    const found = category.find(m => m.id === monster.monsterId);
+                                                    if (found) {
+                                                        monsterName = found.name;
+                                                    }
+                                                });
+                                                
                                                 return `
                                                     <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
                                                         ${monster.quantity}x ${monster.isPlayer ? '&#128100;' : '&#128101;'} ${monsterName}
@@ -5234,7 +5254,7 @@ function displayEncounters() {
                                                 `;
                                             }).join('')}
                                         </div>
-                                    ` : ''}
+                                    ` : '<p class="text-xs text-gray-500">Aucun monstre</p>'}
                                 </div>
                             </div>
                         `;
@@ -5244,7 +5264,9 @@ function displayEncounters() {
         `;
     });
     
+    console.log('Final HTML length:', html.length);
     container.innerHTML = html;
+    console.log('=== DISPLAY ENCOUNTERS DEBUG END ===');
 }
 
 // Make functions globally accessible
