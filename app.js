@@ -4992,7 +4992,22 @@ async function importFromGitHub() {
                 console.error('Encounters data received:', data.encounters);
                 encountersData = {};
             }
-            const encounterCount = encountersData && Object.values(encountersData).reduce((total, cat) => total + cat.length, 0) || 0;
+            let encounterCount = 0;
+            if (encountersData) {
+                Object.values(encountersData).forEach(campaignData => {
+                    if (campaignData && typeof campaignData === 'object') {
+                        Object.values(campaignData).forEach(categoryData => {
+                            if (Array.isArray(categoryData)) {
+                                encounterCount += categoryData.length;
+                            }
+                        });
+                    }
+                });
+            }
+            
+            console.log('Encounters data structure:', encountersData);
+            console.log('Calculated encounter count:', encounterCount);
+            
             if (encounterCount > 0) {
                 localStorage.setItem('encounters', JSON.stringify(encountersData));
                 encounters = encountersData;
