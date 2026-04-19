@@ -5154,7 +5154,22 @@ function displayEncounters() {
         encounters = {};
     }
     
-    const campaignEncounters = encounters[currentCampaign.id] || {};
+    // Get all encounters from all categories
+    const campaignEncounters = {};
+    Object.values(encounters).forEach(categoryEncounters => {
+        if (Array.isArray(categoryEncounters)) {
+            categoryEncounters.forEach(encounter => {
+                if (encounter && encounter.id) {
+                    // Use category name as key or create a default
+                    const categoryName = 'Toutes les rencontres';
+                    if (!campaignEncounters[categoryName]) {
+                        campaignEncounters[categoryName] = [];
+                    }
+                    campaignEncounters[categoryName].push(encounter);
+                }
+            });
+        }
+    });
     
     if (Object.keys(campaignEncounters).length === 0) {
         container.innerHTML = `
