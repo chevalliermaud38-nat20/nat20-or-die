@@ -4880,10 +4880,11 @@ async function importFromGitHub() {
                 campaignsData = typeof data.campaigns === 'string' ? JSON.parse(data.campaigns) : data.campaigns;
             } catch (e) {
                 console.error('Error parsing campaigns:', e);
+                console.error('Campaigns data received:', data.campaigns);
                 campaignsData = [];
             }
             console.log('Campaigns parsed:', campaignsData);
-            if (campaignsData.length > 0) {
+            if (campaignsData && campaignsData.length > 0) {
                 localStorage.setItem('campaigns', JSON.stringify(campaignsData));
                 campaigns = campaignsData;
                 importCount++;
@@ -4897,9 +4898,10 @@ async function importFromGitHub() {
                 worldsData = typeof data.worlds === 'string' ? JSON.parse(data.worlds) : data.worlds;
             } catch (e) {
                 console.error('Error parsing worlds:', e);
+                console.error('Worlds data received:', data.worlds);
                 worldsData = [];
             }
-            if (worldsData.length > 0) {
+            if (worldsData && worldsData.length > 0) {
                 localStorage.setItem('worlds', JSON.stringify(worldsData));
                 worlds = worldsData;
                 importCount++;
@@ -4913,9 +4915,10 @@ async function importFromGitHub() {
                 charactersData = typeof data.characters === 'string' ? JSON.parse(data.characters) : data.characters;
             } catch (e) {
                 console.error('Error parsing characters:', e);
+                console.error('Characters data received:', data.characters);
                 charactersData = {};
             }
-            const characterCount = Object.values(charactersData).reduce((total, cat) => total + cat.length, 0);
+            const characterCount = charactersData && Object.values(charactersData).reduce((total, cat) => total + cat.length, 0) || 0;
             if (characterCount > 0) {
                 localStorage.setItem('characters', JSON.stringify(charactersData));
                 characters = charactersData;
@@ -4930,9 +4933,10 @@ async function importFromGitHub() {
                 monstersData = typeof data.monsters === 'string' ? JSON.parse(data.monsters) : data.monsters;
             } catch (e) {
                 console.error('Error parsing monsters:', e);
+                console.error('Monsters data received:', data.monsters);
                 monstersData = {};
             }
-            const monsterCount = Object.values(monstersData).reduce((total, cat) => total + cat.length, 0);
+            const monsterCount = monstersData && Object.values(monstersData).reduce((total, cat) => total + cat.length, 0) || 0;
             if (monsterCount > 0) {
                 localStorage.setItem('monsters', JSON.stringify(monstersData));
                 monsters = monstersData;
@@ -4947,9 +4951,10 @@ async function importFromGitHub() {
                 categoriesData = typeof data.monsterCategories === 'string' ? JSON.parse(data.monsterCategories) : data.monsterCategories;
             } catch (e) {
                 console.error('Error parsing monsterCategories:', e);
+                console.error('MonsterCategories data received:', data.monsterCategories);
                 categoriesData = {};
             }
-            if (Object.keys(categoriesData).length > 0) {
+            if (categoriesData && Object.keys(categoriesData).length > 0) {
                 localStorage.setItem('monsterCategories', JSON.stringify(categoriesData));
                 monsterCategories = categoriesData;
                 importCount++;
@@ -4963,9 +4968,10 @@ async function importFromGitHub() {
                 encountersData = typeof data.encounters === 'string' ? JSON.parse(data.encounters) : data.encounters;
             } catch (e) {
                 console.error('Error parsing encounters:', e);
+                console.error('Encounters data received:', data.encounters);
                 encountersData = {};
             }
-            const encounterCount = Object.values(encountersData).reduce((total, cat) => total + cat.length, 0);
+            const encounterCount = encountersData && Object.values(encountersData).reduce((total, cat) => total + cat.length, 0) || 0;
             if (encounterCount > 0) {
                 localStorage.setItem('encounters', JSON.stringify(encountersData));
                 encounters = encountersData;
@@ -4980,9 +4986,10 @@ async function importFromGitHub() {
                 spellsData = typeof data.spells === 'string' ? JSON.parse(data.spells) : data.spells;
             } catch (e) {
                 console.error('Error parsing spells:', e);
+                console.error('Spells data received:', data.spells);
                 spellsData = {};
             }
-            const spellCount = Object.values(spellsData).reduce((total, cat) => total + cat.length, 0);
+            const spellCount = spellsData && Object.values(spellsData).reduce((total, cat) => total + cat.length, 0) || 0;
             if (spellCount > 0) {
                 localStorage.setItem('spells', JSON.stringify(spellsData));
                 spells = spellsData;
@@ -4997,9 +5004,10 @@ async function importFromGitHub() {
                 combatDescriptionsData = typeof data.combatDescriptions === 'string' ? JSON.parse(data.combatDescriptions) : data.combatDescriptions;
             } catch (e) {
                 console.error('Error parsing combatDescriptions:', e);
+                console.error('CombatDescriptions data received:', data.combatDescriptions);
                 combatDescriptionsData = [];
             }
-            if (combatDescriptionsData.length > 0) {
+            if (combatDescriptionsData && combatDescriptionsData.length > 0) {
                 localStorage.setItem('combatDescriptions', JSON.stringify(combatDescriptionsData));
                 importCount++;
                 importDetails.push(`${combatDescriptionsData.length} description(s) de combat`);
