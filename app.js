@@ -5114,6 +5114,12 @@ function displayEncounters() {
         return;
     }
     
+    // Vérifier si encounters est null ou undefined
+    if (!encounters) {
+        console.log('Encounters data is null, initializing empty object');
+        encounters = {};
+    }
+    
     const campaignEncounters = encounters[currentCampaign.id] || {};
     
     if (Object.keys(campaignEncounters).length === 0) {
