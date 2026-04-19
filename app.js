@@ -5046,21 +5046,21 @@ async function importFromGitHub() {
         loadCharactersData();
         loadMonstersData();
         loadMonsterCategoriesData();
-        displayEncounters();
         loadSpellsData();
         
         // Auto-select first campaign if available and none selected
         if (campaigns.length > 0 && (!currentCampaign || !currentCampaign.id)) {
             currentCampaign = campaigns[0];
             console.log('Auto-selected campaign:', currentCampaign.name);
-            // Update UI to reflect selection
-            displayEncounters();
             // Update campaign display if needed
             const campaignCards = document.querySelectorAll('.campaign-card');
             campaignCards.forEach(card => card.classList.remove('ring-2', 'ring-indigo-500'));
             const firstCard = document.querySelector('.campaign-card');
             if (firstCard) firstCard.classList.add('ring-2', 'ring-indigo-500');
         }
+        
+        // Now display encounters after campaign is selected
+        displayEncounters();
         
         if (importCount > 0) {
             showSyncStatus(`Données importées avec succès ! ${importDetails.join(', ')}`, 'success');
