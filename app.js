@@ -5211,6 +5211,9 @@ function displayEncounters() {
                                         <button onclick="deleteEncounter('${encounter.id}')" class="text-red-500 hover:text-red-700 text-sm">
                                             <i class="fas fa-trash"></i>
                                         </button>
+                                        <button onclick="startCombat('${encounter.id}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                            <i class="fas fa-swords"></i> Combat
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="mb-3">
